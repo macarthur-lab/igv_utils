@@ -3,7 +3,6 @@ import os
 import re
 import socket
 import tempfile
-import xvfbwrapper
 
 __version__ = 0.9
 
@@ -383,6 +382,7 @@ class IGVCommandLineRobot(_IGVRobot):
             if self.hide_igv_window:
                 if self._verbose:
                     logging.info("Hiding IGV window.")
+                import xvfbwrapper
                 fake_display = xvfbwrapper.Xvfb(
                     width=self.igv_window_width, height=self.igv_window_height, colordepth=24)
                 fake_display.start()
