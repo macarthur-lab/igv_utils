@@ -24,12 +24,14 @@ main_args.add("files or loci", nargs="+", help="Files to load into IGV as well a
     "https://www.broadinstitute.org/igv/RecommendedFileFormats. Each locus specified here (eg. X:12345 or "
     "chr1:12345-54321) will result in a snapshot being taken after files specified prior to it have loaded.")
 
-extra_args = parser.add_argument_group("additional arguments")
-extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
+extra_args = parser.add_argument_group("additional options")
 extra_args.add("--width", type=int, help="IGV window width.", default=800)
 extra_args.add("--height", type=int, help="IGV window height.", default=600)
-
+extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
 extra_args.add("-m", "--max-memory", help="IGV max memory limit (eg. 2G)", default="1024M")
+
+extra_args.add("-g", "--genome", help="Either the local path of a .genome file, or a genome id (eg. hg19) chosen from "
+    "the right-most column of http://igv.broadinstitute.org/genomes/genomes.txt")
 extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help="Changes one of the IGV settings "
     "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
     "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
@@ -46,14 +48,15 @@ args = parser.parse()
 def is_valid_locus_or_region(locus_or_region):
     return igv_robot._match_locus_string(locus_or_region) or igv_robot._match_region_string(locus_or_region)
 
-snapshot_counter = 1
+snapshot_counter = 0
 def take_snapshot(locus_or_region):
     global snapshot_counter
+    snapshot_counter += 1
     locus_or_region_tag = locus_or_region if os.name != "nt" else re.sub("[:-]", "_", locus_or_region)
     snapshot_filename = "%ss%d_%s.png" % (args.output, snapshot_counter, locus_or_region_tag)
     igv_robot.goto(locus_or_region)
     igv_robot.snapshot(snapshot_filename)
-    snapshot_counter += 1
+
 
 # create igv_robot
 args.igv_jar_path = os.path.abspath(os.path.expanduser(args.igv_jar_path))
@@ -68,6 +71,8 @@ igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
 
 
 # global settings
+if args.genome:
+    igv_robot.genome(args.genome)
 if args.view_as_pairs:
     igv_robot.view_all_tracks_as_pairs()
 if args.compactness_command is not None:
@@ -78,6 +83,7 @@ if args.preference:
         if len(key_value) != 2:
             parser.error("Invalid preference arg: %(p)s. It should be of the form -p key=value" % locals())
         igv_robot.preference(key_value[0], key_value[1])
+
 
 # files, loci, regions
 for f in args.__dict__["files or loci"]:
@@ -107,4 +113,10 @@ for locus_or_region in args.locus if args.locus is not None else []:
 igv_robot.exit_igv()
 
 # execute queued commands
+if snapshot_counter == 0:
+	parser.exit("Finished - 0 loci given, so no snapshots will be taken")
+
 igv_robot.execute()
+
+parser.exit("Finished.")
+
