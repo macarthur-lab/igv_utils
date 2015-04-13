@@ -42,8 +42,8 @@ For all options, see:
 
 :code:`igv_plotter -h`
 
-Development and testing
-~~~~~~~~~~~~~~~~~~~~~~~
+Development
+~~~~~~~~~~~
 
 .. image:: https://api.travis-ci.org/macarthur-lab/igv_plotter.svg?branch=master
    :target: https://travis-ci.org/macarthur-lab/igv_plotter
