@@ -1,8 +1,7 @@
 Overview
 ~~~~~~~~
 
-Python interface to IGV. 
-Based on a tool by `@monkollek
+Python interface to IGV inspired by a tool written by `@monkollek
 <https://github.com/monkollek>`_.
 
 
