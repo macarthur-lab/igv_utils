@@ -13,9 +13,9 @@ Install
     cd igv_plotter
     python setup.py install --user
 
-Also, if you haven't already, you should `download a version of IGV
+Also, if you haven't already, you should `download IGV
 <https://github.com/broadinstitute/IGV/releases/>`_ and unzip it in some directory 
-(for example in :code:`~/bin`).
+(such as :code:`~/bin`).
 
 Configure
 ~~~~~~~~~
