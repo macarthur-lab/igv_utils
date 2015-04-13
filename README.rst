@@ -15,8 +15,7 @@ Install
     python setup.py install --user
 
 Also, if you haven't already, you should `download IGV
-<https://github.com/broadinstitute/IGV/releases/>`_ and unzip it in some directory 
-(such as :code:`~/bin`).
+<https://github.com/broadinstitute/IGV/releases/>`_ and unzip it in some directory like :code:`~/bin`.
 
 Configure
 ~~~~~~~~~
