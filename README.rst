@@ -19,11 +19,13 @@ Also, if you haven't already, please `download a version of IGV
 Configure
 ~~~~~~~~~
 
-Create a config file in your home directory: `~/.igv_plotter` 
-Add to it the location of the igv.jar file which can be found inside your IGV install dir:
+Create a config file in your home directory: 
+
+:code:`~/.igv_plotter`
+
+and add to it the full path of :code:`igv.jar` which is inside your IGV install dir:
 
 :code:`igv-jar-path=<path of igv.jar>`
-
 
 
 Run IGV plotter
