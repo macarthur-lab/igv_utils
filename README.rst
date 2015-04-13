@@ -1,7 +1,9 @@
 Overview
 ~~~~~~~~
 
-Python interface to IGV. Based on a tool by @monkollek.
+Python interface to IGV. 
+Based on a tool by `@monkollek
+<https://github.com/monkollek>`_.
 
 
 Install
