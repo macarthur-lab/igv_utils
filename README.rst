@@ -10,7 +10,7 @@ Install
 
 .. code:: py
     
-    git pull https://github.com/macarthur-lab/igv_plotter.git
+    git clone https://github.com/macarthur-lab/igv_plotter.git
     cd igv_plotter
     python setup.py install --user
 
