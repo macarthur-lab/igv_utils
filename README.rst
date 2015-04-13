@@ -42,3 +42,18 @@ For all options, see:
 
 :code:`igv_plotter -h`
 
+Development and testing
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: https://api.travis-ci.org/macarthur-lab/igv_plotter.svg?branch=master
+   :target: https://travis-ci.org/macarthur-lab/igv_plotter
+    
+    
+
+To run tests:
+
+:code:`python setup.py test`
+
+
+
+
