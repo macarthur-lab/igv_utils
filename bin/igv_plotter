@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+"""
+Script for taking IGV screenshots. Run igv_plotter -h for more info.
+"""
+
+import configargparse
+import os
+import re
+
+import igv_api
+
+parser = configargparse.ArgParser(description="This script takes IGV snapshots. ",
+                                  default_config_files=["~/.igv_plotter"],
+                                  formatter_class=configargparse.DefaultsFormatter)
+
+main_args = parser.add_argument_group("main arguments")
+main_args.add("--igv-jar-path", help="Path to igv.jar", required=True)
+main_args.add("-L", nargs="+", dest="locus", help="Locus (eg. X:12345 or chr1:12345-54321) to take a snapshot of "
+    "after all files are loaded, or the path of a file with one locus per line.", action="append")
+main_args.add("-o", "--output", help="Output image file prefix", default="igv_")
+main_args.add("files or loci", nargs="+", help="Files to load into IGV as well as (optionally) loci at which to take "
+    "snapshots as a shortcut alternative to using -L. For a list of accepted IGV file formats, see "
+    "https://www.broadinstitute.org/igv/RecommendedFileFormats. Each locus specified here (eg. X:12345 or "
+    "chr1:12345-54321) will result in a snapshot being taken after files specified prior to it have loaded.")
+
+extra_args = parser.add_argument_group("additional arguments")
+extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
+extra_args.add("--width", type=int, help="IGV window width.", default=800)
+extra_args.add("--height", type=int, help="IGV window height.", default=600)
+
+extra_args.add("-m", "--max-memory", help="IGV max memory limit (eg. 2G)", default="1024M")
+extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help="Changes one of the IGV settings "
+    "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
+    "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
+
+extra_args.add("--view-as-pairs", action="store_true", help="In .bam tracks, view reads as pairs")
+g = extra_args.add_mutually_exclusive_group()
+g.add("--expand", dest="compactness_command", action="store_const", const="expand", help="Expand all tracks")
+g.add("--squish", dest="compactness_command", action="store_const", const="squish", help="Squish all tracks")
+g.add("--collapse", dest="compactness_command", action="store_const", const="collapse", help="Collapse all tracks")
+
+args = parser.parse()
+
+# validate arg values
+def is_valid_locus_or_region(locus_or_region):
+    return igv_robot._match_locus_string(locus_or_region) or igv_robot._match_region_string(locus_or_region)
+
+snapshot_counter = 1
+def take_snapshot(locus_or_region):
+    global snapshot_counter
+    locus_or_region_tag = locus_or_region if os.name != "nt" else re.sub("[:-]", "_", locus_or_region)
+    snapshot_filename = "%ss%d_%s.png" % (args.output, snapshot_counter, locus_or_region_tag)
+    igv_robot.goto(locus_or_region)
+    igv_robot.snapshot(snapshot_filename)
+    snapshot_counter += 1
+
+# create igv_robot
+args.igv_jar_path = os.path.abspath(os.path.expanduser(args.igv_jar_path))
+if not os.path.isfile(args.igv_jar_path) or not args.igv_jar_path.endswith(".jar"):
+    parser.error("Invalid IGV jar path: " + args.igv_jar_path)
+
+igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
+    igv_window_width=args.width,
+    igv_window_height=args.height,
+    max_memory=args.max_memory,
+    verbose=True)
+
+
+# global settings
+if args.view_as_pairs:
+    igv_robot.view_all_tracks_as_pairs()
+if args.compactness_command is not None:
+    igv_robot.command(args.compactness_command)
+if args.preference:
+    for p in args.preference:
+        key_value = p.split("=")
+        if len(key_value) != 2:
+            parser.error("Invalid preference arg: %(p)s. It should be of the form -p key=value" % locals())
+        igv_robot.preference(key_value[0], key_value[1])
+
+# files, loci, regions
+for f in args.__dict__["files or loci"]:
+    if os.path.isfile(f):
+        igv_robot.load(f)
+    elif is_valid_locus_or_region(f):
+        take_snapshot(locus_or_region=f)
+    else:
+        parser.error("File doesn't exist: " + f)
+
+for locus_or_region in args.locus if args.locus is not None else []:
+    if os.path.isfile(str(locus_or_region)):
+        # parse file that contains loci or regions
+        file_path = locus_or_region
+        with open(file_path) as f:
+            for i, line in enumerate(f):
+                line = line.strip()
+                if not is_valid_locus_or_region(line):
+                    parser.error("%(file_path)s line %(i)s: invalid region or locus: %(line)s" % locals())
+                take_snapshot(locus_or_region=line)
+    else:
+        # process locus or region
+        if not is_valid_locus_or_region(locus_or_region):
+            parser.error("Invalid locus or region: %(locus_or_region)s" % locals())
+        take_snapshot(locus_or_region=locus_or_region)
+
+igv_robot.exit_igv()
+
+# execute queued commands
+igv_robot.execute()
