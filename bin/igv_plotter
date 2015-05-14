@@ -32,7 +32,7 @@ extra_args.add("--height", type=int, help="IGV window height.", default=600)
 extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
 extra_args.add("-m", "--max-memory", help="IGV max memory limit (eg. 2G)", default="1024M")
 extra_args.add("-g", "--genome", help="Either the local path of a .genome file, or a genome id (eg. hg19) chosen from "
-    "the right-most column of http://igv.broadinstitute.org/genomes/genomes.txt")
+               "the right-most column of http://igv.broadinstitute.org/genomes/genomes.txt", default="hg19")
 extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help="Changes one of the IGV settings "
     "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
     "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
@@ -52,8 +52,8 @@ snapshot_counter = 0
 def take_snapshot(locus_or_region):
     global snapshot_counter
     snapshot_counter += 1
-    locus_or_region_tag = locus_or_region if os.name != "nt" else re.sub("[:-]", "_", locus_or_region)
-    snapshot_filename = "%ss%d_%s.png" % (args.output, snapshot_counter, locus_or_region_tag)
+    locus_or_region_tag = re.sub("[:-]", "_", locus_or_region)  # if os.name != "nt" 
+    snapshot_filename = "%ss%d__%s.png" % (args.output, snapshot_counter, locus_or_region_tag)
     igv_robot.goto(locus_or_region)
     igv_robot.snapshot(snapshot_filename)
 
@@ -67,7 +67,7 @@ igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
     igv_window_width=args.width,
     igv_window_height=args.height,
     max_memory=args.max_memory,
-    hide_igv_window=False,
+    hide_igv_window=True,
     verbose=True)
 
 
@@ -115,7 +115,7 @@ igv_robot.exit_igv()
 
 # execute queued commands
 if snapshot_counter == 0:
-	parser.exit("Finished - 0 loci given, so no snapshots will be taken")
+    parser.exit("Finished - 0 loci given, so no snapshots will be taken")
 
 igv_robot.execute()
 
