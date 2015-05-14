@@ -12,8 +12,8 @@ Install
     
     git clone https://github.com/macarthur-lab/igv_plotter.git
     cd igv_plotter
-    python setup.py install --user
-
+    python setup.py install   # add --user to install in your home directory
+    
 Also, if you haven't already, you should `download IGV
 <https://github.com/broadinstitute/IGV/releases/>`_ and unzip it in some directory like :code:`~/bin`.
 
@@ -24,10 +24,14 @@ Create a config file in your home directory:
 
 :code:`~/.igv_plotter`
 
-and add a line specifying the full path of :code:`igv.jar` which is inside your IGV install dir.
+and add a line specifying the full path of :code:`igv.jar` which is inside your IGV install dir and
+(optionally) the genome.
 
 :code:`igv-jar-path=<path of igv.jar>`
 
+:code:`genome=hg19`
+
+An alternative to creating this config file is to provide the path on the command line using --igv-jar-path
 
 Run IGV plotter
 ~~~~~~~~~~~~~~~
@@ -36,7 +40,7 @@ Run IGV plotter
 
 To load 3 files, and take 2 snapshots, do:
 
-:code:`igv_plotter  my_file1.vcf  my_file2.bam  my_file3.bed 1:12345 chrX:12345-54321`
+:code:`igv_plotter  my_file1.vcf  my_file2.bam  my_file3.bed 1:12345 chrX:12345`
 
 For all options, see:
 
