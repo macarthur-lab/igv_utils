@@ -10,32 +10,32 @@ import re
 
 import igv_api
 
-parser = configargparse.ArgParser(description="This script takes IGV snapshots. ",
+parser = configargparse.ArgParser(description="This script takes IGV snapshots.",
                                   default_config_files=["~/.igv_plotter"],
                                   formatter_class=configargparse.DefaultsFormatter)
 
-main_args = parser.add_argument_group("main arguments")
+main_args = parser.add_argument_group("core arguments")
 main_args.add("--igv-jar-path", help="Path to igv.jar", required=True)
-main_args.add("-L", nargs="+", dest="locus", help="Locus (eg. X:12345 or chr1:12345-54321) to take a snapshot of "
-    "after all files are loaded, or the path of a file with one locus per line.", action="append")
 main_args.add("-o", "--output", help="Output image file prefix", default="igv_")
-main_args.add("files or loci", nargs="+", help="Files to load into IGV as well as (optionally) loci at which to take "
-    "snapshots as a shortcut alternative to using -L. For a list of accepted IGV file formats, see "
-    "https://www.broadinstitute.org/igv/RecommendedFileFormats. Each locus specified here (eg. X:12345 or "
-    "chr1:12345-54321) will result in a snapshot being taken after files specified prior to it have loaded.")
+main_args.add("-L", nargs="+", dest="locus", metavar="LOCUS_FILE", help="File with one locus "
+              "per line formatted like X:12345 or chr1:12345-54321. A snapshot "
+              "will be taken at each locus.", action="append")
+main_args.add("files or loci", nargs="+", help="Files to load into IGV and/or loci at which to take "
+    "snapshots (as an alternative to -L). Locus format X: can be12345 or chr1:12345-54321. Files and loci "
+    "will be processed in the order they are specified, so if the command line order is 'file1.bed 1:12345 "
+    "file2.bed', file1 will be loaded, then a snapshot will be taken, then file2 will be loaded. "
+    "For a list of accepted IGV file formats, see https://www.broadinstitute.org/igv/RecommendedFileFormats")
 
 extra_args = parser.add_argument_group("additional options")
 extra_args.add("--width", type=int, help="IGV window width.", default=800)
 extra_args.add("--height", type=int, help="IGV window height.", default=600)
 extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
 extra_args.add("-m", "--max-memory", help="IGV max memory limit (eg. 2G)", default="1024M")
-
 extra_args.add("-g", "--genome", help="Either the local path of a .genome file, or a genome id (eg. hg19) chosen from "
     "the right-most column of http://igv.broadinstitute.org/genomes/genomes.txt")
 extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help="Changes one of the IGV settings "
     "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
     "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
-
 extra_args.add("--view-as-pairs", action="store_true", help="In .bam tracks, view reads as pairs")
 g = extra_args.add_mutually_exclusive_group()
 g.add("--expand", dest="compactness_command", action="store_const", const="expand", help="Expand all tracks")
@@ -67,6 +67,7 @@ igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
     igv_window_width=args.width,
     igv_window_height=args.height,
     max_memory=args.max_memory,
+    hide_igv_window=False,
     verbose=True)
 
 

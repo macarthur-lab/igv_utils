@@ -71,14 +71,14 @@ if command not in ['test', 'coverage']:
     long_description = open('README.rst').read()
 
 setup(
-    name='igv_robot',
+    name='igv_plotter',
     version=igv_api.__version__,
     description='python interface to IGV that simplifies creating screenshots of BAMs, VCFs, BEDs, etc for one-off '
                 'spot checking or automated / scripted image collection',
     long_description=long_description,
     author='MacArthur Lab',
     author_email='macarthurlab@gmail.com',
-    url='https://github.com/macarthur-lab/igv_robot',
+    url='https://github.com/macarthur-lab/igv_plotter',
     py_modules=['igv_api'],
     include_package_data=True,
     install_requires=[
