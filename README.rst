@@ -29,9 +29,7 @@ and add a line specifying the full path of :code:`igv.jar` which is inside your 
 
 :code:`igv-jar-path=<path of igv.jar>`
 
-:code:`genome=hg19`
-
-An alternative to creating this config file is to provide the path on the command line using --igv-jar-path
+An alternative to creating this config file is to provide the path using --igv-jar-path on the command line. 
 
 Run IGV plotter
 ~~~~~~~~~~~~~~~
