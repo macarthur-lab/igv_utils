@@ -1,7 +1,0 @@
-#!/usr/bin/env python
-
-"""
-Script that simplifies starting up IGV, load the initial set of files, and scrolling through IGV positions.
-"""
-
-# Not implemented yet
