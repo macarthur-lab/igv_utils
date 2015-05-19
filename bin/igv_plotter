@@ -76,8 +76,6 @@ if args.genome:
     igv_robot.genome(args.genome)
 if args.view_as_pairs:
     igv_robot.view_all_tracks_as_pairs()
-if args.compactness_command is not None:
-    igv_robot.command(args.compactness_command)
 if args.preference:
     for p in args.preference:
         key_value = p.split("=")
@@ -90,6 +88,8 @@ if args.preference:
 for f in args.__dict__["files or loci"]:
     if os.path.isfile(f):
         igv_robot.load(f)
+        if args.compactness_command is not None:
+            igv_robot.command(args.compactness_command)
     elif is_valid_locus_or_region(f):
         take_snapshot(locus_or_region=f)
     else:
