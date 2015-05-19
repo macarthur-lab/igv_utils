@@ -11,7 +11,7 @@ import re
 import igv_api
 
 parser = configargparse.ArgParser(description="This script takes IGV snapshots.",
-                                  default_config_files=["~/.igv_plotter"],
+                                  default_config_files=["~/.igv_plotter", "igv_plotter.yaml"],
                                   formatter_class=configargparse.DefaultsFormatter)
 
 main_args = parser.add_argument_group("core arguments")
