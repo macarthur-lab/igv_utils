@@ -18,6 +18,8 @@ class _IGVRobot(object):
           verbose: whether to print each command to stdout
         """
         self._verbose = verbose
+        if verbose:
+            logging.basicConfig(level=logging.INFO)
 
         self.__command_queue = []
 
@@ -247,10 +249,9 @@ class _IGVRobot(object):
     def execute(self):
         """Execute queued-up IGV commands."""
 
-        if self._verbose:
-            logging.info("Executing commands:")
-            for c in self.__command_queue:
-                logging.info("  " + c)
+        logging.info("Executing commands:")
+        for c in self.__command_queue:
+            logging.info("  " + c)
 
         self._execute_impl(self.__command_queue)
 
@@ -295,7 +296,7 @@ class IGVSocketRobot(_IGVRobot):
               like 'Listening on port X'.
             verbose: whether to print each command.
         """
-        super(IGVSocketRobot, self).__init__(verbose)
+        super(IGVSocketRobot, self).__init__(verbose=verbose)
 
         self.host = host
         self.port = port
@@ -330,7 +331,7 @@ class IGVCommandLineRobot(_IGVRobot):
             max_memory: java maximum memory limit when running IGV (eg. 512M or 2G)
             verbose: whether to print out every command
         """
-        super(IGVCommandLineRobot, self).__init__(verbose)
+        super(IGVCommandLineRobot, self).__init__(verbose=verbose)
 
         self.igv_jar_path = igv_jar_path
         self.hide_igv_window = hide_igv_window
@@ -380,8 +381,7 @@ class IGVCommandLineRobot(_IGVRobot):
 
             # start IGV with batch file
             if self.hide_igv_window:
-                if self._verbose:
-                    logging.info("Hiding IGV window.")
+                logging.info("Hiding IGV window.")
                 import xvfbwrapper
                 fake_display = xvfbwrapper.Xvfb(
                     width=self.igv_window_width, height=self.igv_window_height, colordepth=24)
@@ -408,8 +408,7 @@ class IGVCommandLineRobot(_IGVRobot):
         if batch_filename is not None:
             igv_command += " -b " + batch_filename
 
-        if self._verbose:
-            logging.info("Launching IGV: " + igv_command)
+        logging.info("Launching IGV: " + igv_command)
         return_code = os.system(igv_command)
 
         if return_code != 0:
