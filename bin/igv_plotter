@@ -119,7 +119,7 @@ if snapshot_counter == 0:
 
 try:
     igv_robot.execute()
-except Exception, e:
+except Exception as e:
     parser.exit("IGV crashed: %s" % e)
 
 parser.exit("Finished.")

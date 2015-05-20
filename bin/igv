@@ -76,5 +76,5 @@ for f in args.__dict__["files and/or locus"]:
 
 try:
     igv_robot.execute()
-except Exception, e:
+except Exception as e:
     sys.exit("IGV crashed: %s" % e)
