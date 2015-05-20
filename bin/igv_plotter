@@ -117,7 +117,10 @@ igv_robot.exit_igv()
 if snapshot_counter == 0:
     parser.exit("Finished - 0 loci given, so no snapshots will be taken")
 
-igv_robot.execute()
+try:
+    igv_robot.execute()
+except Exception, e:
+    parser.exit("IGV crashed: %s" % e)
 
 parser.exit("Finished.")
 
