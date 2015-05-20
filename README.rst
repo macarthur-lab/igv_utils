@@ -27,7 +27,7 @@ Configure
 ~~~~~~~~~
 
 For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of the :code:`igv.jar` file (see Install section). 
-This can be provided to them using either the :code:`--igv-jar-path` command line option or by setting it in the 
+This can be set using either the :code:`--igv-jar-path` command line option or by setting it in the 
 :code:`~/.igv_plotter` config file using the following line:
 
 :code:`igv-jar-path = <full path of igv.jar>`
