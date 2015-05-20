@@ -102,5 +102,5 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     test_suite='tests',
-    scripts=['bin/igv_plotter'], # 'bin/igv_launcher'
+    scripts=['bin/igv_plotter', 'bin/igv']
 )
