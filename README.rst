@@ -67,8 +67,6 @@ Contribute
 .. image:: https://api.travis-ci.org/macarthur-lab/igv_plotter.svg?branch=master
    :target: https://travis-ci.org/macarthur-lab/igv_plotter
     
-    
-This code is open sourced under the MIT license. 
 
 Issue reporting and pull requests are appreciated.
 
@@ -76,6 +74,8 @@ Unit tests can be run with:
 
 :code:`python setup.py test`
 
+    
+This code is open sourced under the MIT license. 
 
 
 
