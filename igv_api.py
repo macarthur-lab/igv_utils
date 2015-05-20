@@ -249,9 +249,12 @@ class _IGVRobot(object):
     def execute(self):
         """Execute queued-up IGV commands."""
 
-        logging.info("Executing commands:")
-        for c in self.__command_queue:
-            logging.info("  " + c)
+        if self.__command_queue:
+            logging.info("Executing commands:")
+            for c in self.__command_queue:
+                logging.info("  " + c)
+        else:
+            logging.info("0 commands to execute.")
 
         self._execute_impl(self.__command_queue)
 
@@ -368,29 +371,28 @@ class IGVCommandLineRobot(_IGVRobot):
 
     def _execute_impl(self, commands):
         """Executes the list of IGV commands"""
-        if not commands:
-            return
 
-        #if "exit" not in commands:
-        #    commands.append("exit")  # ensure IGV exits and doesn't hang up this tool after it's done with all commands
+        # save commands to batch file
+        if commands:
+            with self._create_temp_batch_file() as f:
+                batch_filename = f.name
+                for c in commands:
+                    f.write(c + "\n")
+        else:
+            batch_filename = None
 
-        with self._create_temp_batch_file() as f:
-            for c in commands:
-                f.write(c + "\n")
-            f.flush()
+        # start IGV
+        if self.hide_igv_window:
+            logging.info("Hiding IGV window.")
+            import xvfbwrapper
+            fake_display = xvfbwrapper.Xvfb(
+                width=self.igv_window_width, height=self.igv_window_height, colordepth=24)
+            fake_display.start()
 
-            # start IGV with batch file
-            if self.hide_igv_window:
-                logging.info("Hiding IGV window.")
-                import xvfbwrapper
-                fake_display = xvfbwrapper.Xvfb(
-                    width=self.igv_window_width, height=self.igv_window_height, colordepth=24)
-                fake_display.start()
+        self.launch_igv(batch_filename=batch_filename)
 
-            self.launch_igv(batch_filename=f.name)
-
-            if self.hide_igv_window:
-                fake_display.stop()
+        if self.hide_igv_window:
+            fake_display.stop()
 
     def _create_temp_batch_file(self):
         """Returns a new temp file, open for writing."""
