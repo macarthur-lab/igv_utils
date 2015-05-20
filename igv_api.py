@@ -396,7 +396,7 @@ class IGVCommandLineRobot(_IGVRobot):
 
     def _create_temp_batch_file(self):
         """Returns a new temp file, open for writing."""
-        return tempfile.NamedTemporaryFile(delete=True)
+        return tempfile.NamedTemporaryFile(delete=False)
 
     def launch_igv(self, batch_filename=None):
         """Launches IGV, optionally passing it the given batch file."""
