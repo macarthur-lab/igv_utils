@@ -12,12 +12,12 @@ It includes the following executables:
 Install
 ~~~~~~~~
 
-* Run:
-
-:code:`pip install igv_plotter   # add --user to install in your home directory`
-    
 * If you don't have IGV installed yet, `download the IGV binary distribution <https://www.broadinstitute.org/software/igv/download>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
 
+* Run:   :code:`pip install igv_plotter`   
+  
+  (add :code:`--user` option to install in your home directory)
+    
 
 Configure
 ~~~~~~~~~
@@ -42,15 +42,15 @@ To see all command line options, do:
 
 :code:`igv -h`
 
-**igv_plotter script example:**
+**igv_plotter script** - usage example:
 
 This loads 3 files, and takes 2 snapshots:
 
 :code:`igv_plotter  my_file1.vcf  my_file2.bam  my_file3.bed 1:12345 chrX:12345`
 
-**igv usage example:**
+**igv script** - usage example:
 
-This launches IGV with 2 files loaded and showing locus 1:12345:
+This launches IGV with 2 files loaded at locus 1:12345:
 
 :code:`igv  my_file1.vcf  my_file3.bed 1:12345`
 
