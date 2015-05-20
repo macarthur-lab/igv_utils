@@ -12,7 +12,9 @@ It includes the following executables:
 Install
 ~~~~~~~~
 
-* Run :code:`pip install igv_plotter   # add --user to install in your home directory`
+* Run:
+
+:code:`pip install igv_plotter   # add --user to install in your home directory`
     
 * If you don't have IGV installed yet, `download the IGV binary distribution <https://www.broadinstitute.org/software/igv/download>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
 
@@ -20,7 +22,7 @@ Install
 Configure
 ~~~~~~~~~
 
-For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of :code:`igv.jar (see Install section).
+For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of :code:`igv.jar` (see Install section).
 This can be set using either the :code:`--igv-jar-path` command line option or by setting it in the 
 :code:`~/.igv_plotter` config file by putting the following line:
 
