@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Script that makes it easier to start IGV from the command line with the initial set of files already loaded.
+Script that makes it easier to start IGV from the command line, optionally with initial data files and/or at a specific locus.
 """
 
 import configargparse
@@ -11,7 +11,7 @@ import sys
 
 import igv_api
 
-parser = configargparse.ArgParser(description="This script takes IGV snapshots.",
+parser = configargparse.ArgParser(description="Script for starting IGV, optionally with initial data files and/or at a specific locus.",
                                   default_config_files=["~/.igv_plotter"],
                                   formatter_class=configargparse.DefaultsFormatter)
 
@@ -78,6 +78,3 @@ try:
     igv_robot.execute()
 except Exception, e:
     sys.exit("IGV crashed: %s" % e)
-
-
-
