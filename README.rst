@@ -12,7 +12,6 @@ It includes the following executables:
 Install
 ~~~~~~~~
 
-* If you don't have IGV installed yet, `download the IGV binary distribution <https://www.broadinstitute.org/software/igv/download>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
 * Install :code:`igv_plotter`:
 
 .. code:: py
@@ -21,6 +20,8 @@ Install
     cd igv_plotter
     python setup.py install   # add --user to install in your home directory
     
+* If you don't have IGV installed yet, `download the IGV binary distribution <https://www.broadinstitute.org/software/igv/download>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
+
 
 Configure
 ~~~~~~~~~
