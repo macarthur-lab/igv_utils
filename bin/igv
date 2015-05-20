@@ -7,6 +7,7 @@ Script that makes it easier to start IGV from the command line with the initial 
 import configargparse
 import os
 import re
+import sys
 
 import igv_api
 
@@ -73,7 +74,10 @@ for f in args.__dict__["files and/or locus"]:
     else:
         parser.error("File doesn't exist: " + f)
 
-igv_robot.execute()
+try:
+    igv_robot.execute()
+except Exception, e:
+    sys.exit("IGV crashed: %s" % e)
 
 
 
