@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-Script that makes it easier to start IGV from the command line, optionally with initial data files and/or at a specific locus.
+Script that makes it easier to start IGV from the command line, optionally with initial data files and/or at a
+specific locus.
 """
 
 import configargparse
@@ -15,8 +16,9 @@ parser = configargparse.ArgParser(description="Script for starting IGV, optional
                                   default_config_files=["~/.igv_plotter"],
                                   formatter_class=configargparse.DefaultsFormatter)
 
-parser.add("files and/or locus", nargs="*", help="Optionally, one or more files to load into IGV at startup and/or a locus to jump to"
-           " (for example chr1:12345). For a list of accepted IGV file formats, see https://www.broadinstitute.org/igv/RecommendedFileFormats")
+parser.add("files_or_locus", metavar="files and/or locus", nargs="*", help="Optionally, one or more files to load into "
+    "IGV at startup and/or a locus to jump to (for example chr1:12345). For a list of accepted IGV file formats,"
+    " see https://www.broadinstitute.org/igv/RecommendedFileFormats")
 parser.add("--igv-jar-path", help="Path to igv.jar", required=True)
 parser.add("--width", type=int, help="IGV window width.", default=800)
 parser.add("--height", type=int, help="IGV window height.", default=600)
@@ -66,7 +68,7 @@ if args.preference:
 
 
 # files, loci, regions
-for f in args.__dict__["files and/or locus"]:
+for f in args.files_or_locus:
     if os.path.isfile(f):
         igv_robot.load(f)
     elif is_valid_locus_or_region(f):

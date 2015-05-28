@@ -17,11 +17,10 @@ parser = configargparse.ArgParser(description="This script takes IGV snapshots."
 main_args = parser.add_argument_group("core arguments")
 main_args.add("--igv-jar-path", help="Path to igv.jar", required=True)
 main_args.add("-o", "--output", help="Output image file prefix", default="igv_")
-main_args.add("-L", nargs="+", dest="locus", metavar="LOCUS_FILE", help="File with one locus "
-              "per line formatted like X:12345 or chr1:12345-54321. A snapshot "
-              "will be taken at each locus.", action="append")
-main_args.add("files or loci", nargs="+", help="Files to load into IGV and/or loci at which to take "
-    "snapshots (as an alternative to -L). Locus format X: can be12345 or chr1:12345-54321. Files and loci "
+main_args.add("-L", "--locus-file", dest="locus_file", metavar="LOCUS_FILE", help="File with one locus per line "
+    "formatted like X:12345 or chr1:12345-54321. A snapshot will be taken at each locus.")
+main_args.add("files_or_loci", metavar="files or loci", nargs="+", help="Files to load into IGV and/or loci at which to "
+    "take snapshots (as an alternative to -L). Locus format X: can be 12345 or chr1:12345-54321. Files and loci "
     "will be processed in the order they are specified, so if the command line order is 'file1.bed 1:12345 "
     "file2.bed', file1 will be loaded, then a snapshot will be taken, then file2 will be loaded. "
     "For a list of accepted IGV file formats, see https://www.broadinstitute.org/igv/RecommendedFileFormats")
@@ -37,14 +36,32 @@ extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help=
     "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
     "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
 extra_args.add("--view-as-pairs", action="store_true", help="In .bam tracks, view reads as pairs")
-g = extra_args.add_mutually_exclusive_group()
-g.add("--expand", dest="compactness_command", action="store_const", const="expand", help="Expand all tracks")
-g.add("--squish", dest="compactness_command", action="store_const", const="squish", help="Squish all tracks")
-g.add("--collapse", dest="compactness_command", action="store_const", const="collapse", help="Collapse all tracks")
+g1 = extra_args.add_mutually_exclusive_group()
+g1.add("--expand", dest="compactness_command", action="store_const", const="expand", help="Expand all tracks")
+g1.add("--squish", dest="compactness_command", action="store_const", const="squish", help="Squish all tracks")
+g1.add("--collapse", dest="compactness_command", action="store_const", const="collapse", help="Collapse all tracks")
+
+#g2 = extra_args.add_mutually_exclusive_group()
+#g2.add("--hide-igv-window", dest="hide_igv_window", action="store_true", help="To run in the foreground and show a "
+#   "window, IGV needs to know whether the computer it's running on has a display monitor attached. igv_plotter "
+#	"attempts to detect this automatically by (checking whether the DISPLAY env. var is set). If this detection "
+#	"fails, it may cause IGV to crash when there's no monitor, or to hide the window unnecessarily when there is a "
+#	"monitor. This option can be used to override the automatic display detection mechanism.")
+#g2.add("--show-igv-window", dest="hide_igv_window", action="store_false", help="See help for --hide-igv-window")
 
 args = parser.parse()
 
-# validate arg values
+# process command line args
+#if args.hide_igv_window is None:
+#	# attempt to automatically detect whether a display monitor is connected to this computer
+#	has_display_monitor = "DISPLAY" in os.environ
+#	hide_igv_window = not has_display_monitor
+#else:
+#	hide_igv_window = args.hide_igv_window
+
+hide_igv_window = True  # for now always hide the window since it opens and closes too fast to be useful anyway
+
+# helper funcitons
 def is_valid_locus_or_region(locus_or_region):
     return igv_robot._match_locus_string(locus_or_region) or igv_robot._match_region_string(locus_or_region)
 
@@ -67,7 +84,7 @@ igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
     igv_window_width=args.width,
     igv_window_height=args.height,
     max_memory=args.max_memory,
-    hide_igv_window=True,
+    hide_igv_window=hide_igv_window,
     verbose=True)
 
 
@@ -83,9 +100,8 @@ if args.preference:
             parser.error("Invalid preference arg: %(p)s. It should be of the form -p key=value" % locals())
         igv_robot.preference(key_value[0], key_value[1])
 
-
 # files, loci, regions
-for f in args.__dict__["files or loci"]:
+for f in args.files_or_loci:
     if os.path.isfile(f):
         igv_robot.load(f)
         if args.compactness_command is not None:
@@ -95,21 +111,17 @@ for f in args.__dict__["files or loci"]:
     else:
         parser.error("File doesn't exist: " + f)
 
-for locus_or_region in args.locus if args.locus is not None else []:
-    if os.path.isfile(str(locus_or_region)):
-        # parse file that contains loci or regions
-        file_path = locus_or_region
-        with open(file_path) as f:
-            for i, line in enumerate(f):
-                line = line.strip()
-                if not is_valid_locus_or_region(line):
-                    parser.error("%(file_path)s line %(i)s: invalid region or locus: %(line)s" % locals())
-                take_snapshot(locus_or_region=line)
-    else:
-        # process locus or region
-        if not is_valid_locus_or_region(locus_or_region):
-            parser.error("Invalid locus or region: %(locus_or_region)s" % locals())
-        take_snapshot(locus_or_region=locus_or_region)
+if args.locus_file:
+    if not os.path.isfile(args.locus_file):
+        parser.error("File doesn't exist: " + args.locus_file)
+
+    with open(args.locus_file) as f:
+    # parse file that contains loci or regions
+	    for i, line in enumerate(f):
+			line = line.strip()
+			if not is_valid_locus_or_region(line):
+				parser.error("%(file_path)s line %(i)s: invalid region or locus: %(line)s" % locals())
+			take_snapshot(locus_or_region=line)
 
 igv_robot.exit_igv()
 
@@ -122,5 +134,5 @@ try:
 except Exception as e:
     parser.exit("IGV crashed: %s" % e)
 
-parser.exit("Finished.")
+print("Finished.")
 

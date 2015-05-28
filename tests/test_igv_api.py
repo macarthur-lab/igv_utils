@@ -3,12 +3,6 @@ import logging
 import sys
 import unittest
 
-# enable logging to simplify debugging
-logger = logging.getLogger()
-logger.level = logging.DEBUG
-stream_handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(stream_handler)
-
 
 class IGVRobotStub(_IGVRobot):
     def __init__(self):
@@ -21,6 +15,14 @@ class IGVRobotStub(_IGVRobot):
 
 
 class TestBasicUseCases(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # enable logging to simplify debugging
+        logger = logging.getLogger()
+        logger.level = logging.DEBUG
+        stream_handler = logging.StreamHandler(sys.stdout)
+        logger.addHandler(stream_handler)
 
     def setUp(self):
         if sys.version_info.major < 3:
@@ -138,3 +140,6 @@ class TestBasicUseCases(unittest.TestCase):
         for value in ["10k", "10m", "10G"]:
             r = IGVCommandLineRobot(max_memory=value)
             self.assertEquals(r.max_memory, value)
+
+if __name__ == '__main__':
+    unittest.main()
