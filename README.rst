@@ -12,7 +12,7 @@ It includes the following executables:
 Install
 ~~~~~~~~
 
-* If you don't have IGV installed yet, `download the IGV binary distribution <https://www.broadinstitute.org/software/igv/download>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
+* If you don't have IGV installed yet, `download the IGV binary distribution <https://github.com/igvteam/igv/releases>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
 
 * Run:   :code:`pip install igv_plotter`   
   
