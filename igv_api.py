@@ -2,9 +2,10 @@ import logging
 import os
 import re
 import socket
+import subprocess
 import tempfile
 
-__version__ = 0.9
+__version__ = "0.9.1"
 
 
 class _IGVRobot(object):
@@ -409,11 +410,18 @@ class IGVCommandLineRobot(_IGVRobot):
             igv_command += " -b " + batch_filename
 
         logging.info("Launching IGV: " + igv_command)
-        return_code = os.system(igv_command)
+        s = subprocess.Popen(igv_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        while True:
+            line = s.stdout.readline().strip('\n')
+            if line:
+                logging.info(line)
+            elif s.poll() is not None:
+                break
 
-        if return_code != 0:
-            raise IGVException("IGV exited with non-zero exit code: %(return_code)s" % locals())
+        if s.returncode != 0:
+            raise IGVException("IGV exited with non-zero exit code: " + str(s.returncode))
 
+        logging.info("Finished.")
 
 class IGVException(Exception):
     pass

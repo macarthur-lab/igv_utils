@@ -24,6 +24,7 @@ main_args.add("files_or_loci", metavar="files or loci", nargs="+", help="Files t
     "will be processed in the order they are specified, so if the command line order is 'file1.bed 1:12345 "
     "file2.bed', file1 will be loaded, then a snapshot will be taken, then file2 will be loaded. "
     "For a list of accepted IGV file formats, see https://www.broadinstitute.org/igv/RecommendedFileFormats")
+main_args.add("-v", "--verbose", action="store_true", help="Enable detailed logging output from igv_plotter and IGV.")
 
 extra_args = parser.add_argument_group("additional options")
 extra_args.add("--width", type=int, help="IGV window width.", default=800)
@@ -85,7 +86,7 @@ igv_robot = igv_api.IGVCommandLineRobot(args.igv_jar_path,
     igv_window_height=args.height,
     max_memory=args.max_memory,
     hide_igv_window=hide_igv_window,
-    verbose=True)
+    verbose=args.verbose)
 
 
 # global settings
@@ -133,6 +134,4 @@ try:
     igv_robot.execute()
 except Exception as e:
     parser.exit("IGV crashed: %s" % e)
-
-print("Finished.")
 
