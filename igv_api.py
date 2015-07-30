@@ -95,33 +95,31 @@ class _IGVRobot(object):
         """
         self.command("maxPanelHeight %(height)s" % locals())
 
-    def goto(self, locus_or_region):
-        """Scrolls to a locus (eg. chr3:12345) or scrolls and zooms to a region (eg. chr3:12345-12543).
+    def goto(self, locus):
+        """Jump to a locus (eg. "chr3:12345") or region (eg. "chr3:12345-12543").
         Any syntax that is valid in the IGV search box can be used.
 
         Args:
-            locus_or_region: genomic position or region string
+            locus: genomic position string
         """
-        if self._match_region_string(locus_or_region):
-            self.region(locus_or_region)
-        elif self._match_locus_string(locus_or_region):
-            self.locus(locus_or_region)
+        if self._match_locus_string(locus) or self._match_region_string(locus):
+            self.locus(locus)
         else:
-            raise ValueError("Invalid locus or region: %(locus_or_region)s" % locals())
+            raise ValueError("Invalid locus or region: %(locus)s" % locals())
 
     def locus(self, locus):
-        """Scrolls to a single locus. Use any syntax that is valid in the IGV search box.
+        """Scrolls to the given locus or region. Use any syntax that is valid in the IGV search box.
 
         Args:
-            locus: genomic position string (eg. "1:12345" or "chr3:12345")
+            locus: genomic position string (eg. "1:12345" or "chr3:12345-54321")
         """
-        if not self._match_locus_string(locus):
+        if not self._match_locus_string(locus) and not self._match_region_string(locus):
             raise ValueError("Invalid locus: %(locus)s" % locals())
 
         self.command("goto %(locus)s" % locals())
 
     def region(self, region_string_or_chrom, start=None, end=None):
-        """Scrolls and zooms in to the given region.
+        """Defines a region of interest bounded by the two loci (e.g., region chr1 100 200).
 
         Args:
           region_string_or_chrom: Entire region string (eg. "chr1:100-1000") or just the chrom (can be "chr1" or "1")
@@ -377,7 +375,7 @@ class IGVCommandLineRobot(_IGVRobot):
             with self._create_temp_batch_file() as f:
                 batch_filename = f.name
                 for c in commands:
-                    f.write(c + "\n")
+                    f.write(bytes("%s\n" % c, 'UTF-8'))
         else:
             batch_filename = None
 
