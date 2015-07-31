@@ -1,0 +1,207 @@
+#!/usr/bin/env python
+
+import argparse
+import flask
+import os
+import re
+
+app = flask.Flask(__name__)
+
+
+files_and_loci = [{'files': [], 'loci': []}]
+
+
+@app.route('/file/<path:path>', methods=['GET'])
+def static_proxy(path):
+    path = os.path.abspath("/"+path)
+    print("Retrieving static path: " + path)
+    return flask.send_from_directory(os.path.dirname(path),
+                                     os.path.basename(path))
+
+#@app.route('/ls', methods=['GET'])
+#def list_files():
+#    return ""
+
+
+@app.route('/', defaults={'page': 0})
+@app.route('/page/<int:page>')
+def main(page):
+    if page >= len(files_and_loci):
+        return "Invalid page: %(page)s. To create more pages, specify more files on the command line." % locals()
+
+    files_and_loci_dict = files_and_loci[page]
+    files_and_loci_dict['prev_page'] = page - 1 if page > 0 else None
+    files_and_loci_dict['page'] = page
+    files_and_loci_dict['next_page'] = page + 1 if page + 1 < len(files_and_loci) else None
+
+    print("Rendering page %(page)s: %(files_and_loci_dict)s" % locals())
+
+    webpage = """
+    <html>
+    <head><title>IGV web viewer</title></head>
+    <body>
+        <table width='100%'><tr>
+        <td width='50px'></td>
+        {% if loci %}
+            <td>
+            <b>Goto:</b>&nbsp;&nbsp;
+            {% for locus in loci %}
+                <a href="javascript: igv.browser.search('{{locus}}');">{{locus}}</a>
+                &nbsp;&nbsp;
+            {% endfor %}
+            </td>
+        {% endif %}
+        {% if prev_page or next_page %}
+            <td width='120px'>
+                {% if prev_page or prev_page == 0 %}
+                    <a href = '/page/{{ prev_page }}'>&lt; prev</a>
+                {% else %}
+                    &nbsp; prev
+                {% endif %}
+                 &nbsp; &nbsp;
+                {% if next_page %}
+                    <a href = '/page/{{ next_page }}'>next &gt;</a>
+                {% else %}
+                    next &nbsp;
+                {% endif %}
+            </td>
+        {% endif %}
+        </tr></table>
+
+        <div id='igv_container'></div>
+
+         <!-- jQuery and jQuery UI -->
+         <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+         <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+         <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/> <script type="text/javascript
+
+         <!-- Google Fonts and Font awesome -->
+         <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=PT+Sans:400,700'> <link rel="stylesheet" type="text/css" href='//fonts.googlea
+         <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+         <!-- Bootstrap JS - for demo only, NOT REQUIRED FOR IGV -->
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.22.2/js/jquery.tablesorter.js"></script>
+
+         <link rel="stylesheet" type="text/css" href="http://igv.org/web/beta/igv-beta.css">
+         <script type="text/javascript" src="http://igv.org/web/beta/igv-beta.min.js"></script>
+
+         <script type="text/javascript">
+            var div = $("#igv_container")[0];
+            var tracks = [];
+
+           //tracks.push({ url: '/static/read_viz/gencode.v19.sorted.bed', name: "gencode v19" });
+
+            {% for filename, extension, indexed, name in files %}
+                tracks.push({
+                    type: '{{ extension }}',
+                    indexed: {{ indexed | tojson }},
+                    name: '{{ name }}',
+                    url: '/file{{ filename }}',
+                });
+            {% endfor %}
+
+           var options = {
+              showCommandBar: true,
+              genome: 'hg19',
+              locus: '{{ loci[0] }}',
+              showKaryo: false,
+              tracks: tracks,
+           };
+
+           browser = igv.createBrowser(div, options);
+
+           $('#reset-read-viz').click(function() {
+              igv.browser.search(locus);
+           });
+        </script>
+    </body>
+    </html>
+    """
+
+    return flask.render_template_string(webpage, **files_and_loci_dict)
+
+def is_valid_locus_or_region(locus_or_region):
+    return re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})", locus_or_region) or \
+           re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})", locus_or_region)
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(
+        description="This script launches a webserver that allows passed-in "
+                    "files to be viewed in a browser using Jim Robinson's "
+                    "igv.js (https://github.com/igvteam/igv.js).",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    p.add_argument("files_or_loci", metavar="files or loci", nargs="+",
+        help="Here you can list files to load and/or loci to jump to."
+            "Loci can be specified as, for example, X:12345 or chr1:12345-54321. "
+            "For a list of accepted file formats, see "
+            "https://www.broadinstitute.org/igv/RecommendedFileFormats")
+
+    p.add_argument("--host", help="Host name or ip address to listen on. "
+        "For computers with more than one network interface, 0.0.0.0 will listen "
+        "on all interfaces.", default="0.0.0.0")
+    p.add_argument("-p", "--port", help="Port to listen on.", default=8000)
+    p.add_argument("-v", "--verbose", action="store_true", help="Enable detailed logging output.")
+
+    args = p.parse_args()
+
+    # process files and loci arg
+    previous_arg_was_a_locus = False  # used to decide when to start a new page
+    for arg in args.files_or_loci:
+        if is_valid_locus_or_region(arg):  # handle locus args
+            files_and_loci[-1]['loci'].append(arg)
+            previous_arg_was_a_locus = True
+
+        elif os.path.isfile(arg):   # handle file args
+            if previous_arg_was_a_locus and len(files_and_loci[-1]['files']) > 0:
+                # start a new set of files + loci to be displayed on a new page
+                files_and_loci.append({
+                    'files': [],
+                    'loci': [],
+                })
+            previous_arg_was_a_locus = False
+
+            # get the parameters igv wants for each file
+            filename = arg
+            name = os.path.basename(filename)
+            extension = filename.split('.')[-1]
+            indexed = False
+
+            # validate file extension and index
+            if extension == 'bam':
+                indexed = True
+                if not any(os.path.isfile(idx) for idx in [filename + ".bai", filename.replace(".bam", ".bai")]):
+                    print("WARNING: .bai index not found for %(filename)s. Skipping..." % locals())
+                    continue
+            elif extension in ['bed.gz', 'vcf.gz']:
+                extension = extension.replace('.gz', '')
+                indexed = os.path.isfile(filename + ".tbi")
+            elif extension not in ['bed', 'wig', 'vcf']:
+                print("WARNING: unexpected file type: %(filename)s. Skipping..." % locals())
+                continue
+
+            files_and_loci[-1]['files'].append(
+                (filename, extension, indexed, name))
+
+        else:
+            p.error("File doesn't exist: " + arg)
+
+    # check that at least one file was specified
+    if len(files_and_loci[-1]['files']) == 0:
+        p.error("No files provided.")
+
+    # check that at least one locus was specified - nevermind loci are optional
+    #if len(files_and_loci[-1]['loci']) == 0:
+    #    if len(files_and_loci) > 1:
+    #        print("WARNING: no loci provided for filename(s): " + ",".join(files_and_loci[-1]['files']) + ". Skipping..")
+    #        del files_and_loci[-1]
+    #    else:
+    #        p.error("No loci provided.")
+
+    if args.verbose:
+        print(files_and_loci)
+
+    app.run(host=args.host, port=args.port)
