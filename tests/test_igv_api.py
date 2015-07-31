@@ -40,7 +40,7 @@ class TestBasicUseCases(unittest.TestCase):
             "genome hg18",
             "maxPanelHeight 30",
             "goto Y:1000",
-            "region 3 10 1000",
+            "goto 3:10-1000",
             "goto M:1000",
             "goto chr14:1000,chr3:12345",
             "goto X:1000,Y:12345",
