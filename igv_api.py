@@ -5,8 +5,6 @@ import socket
 import subprocess
 import tempfile
 
-__version__ = "0.9.1"
-
 
 class _IGVRobot(object):
     """Parent class that defines the IGV command interface (http://www.broadinstitute.org/software/igv/PortCommands)
