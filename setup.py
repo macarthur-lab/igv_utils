@@ -72,7 +72,7 @@ if command not in ['test', 'coverage']:
 
 setup(
     name='igv_plotter',
-    version=igv_api.__version__,
+    version="0.9.2",
     description='python interface to IGV that simplifies creating screenshots of BAMs, VCFs, BEDs, etc for one-off '
                 'spot checking or automated / scripted image collection',
     long_description=long_description,
@@ -84,6 +84,7 @@ setup(
     install_requires=[
         'xvfbwrapper',  # creates a fake X server, allowing IGV to run without crashing with java.awt.HeadlessException
         'configargparse',  # argparse replacement that adds support for config files
+        'flask',
     ],
     license="MIT",
     keywords='IGV, snapshots, screenshots, images, BAM, VCF, bioinformatics, sequencing, NGS, variants',
@@ -102,5 +103,5 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     test_suite='tests',
-    scripts=['bin/igv_plotter', 'bin/igv']
+    scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv']
 )
