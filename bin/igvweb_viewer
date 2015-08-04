@@ -7,41 +7,41 @@ import os
 import re
 import socket
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)  # disable Flask log messages
-
+logging.getLogger('werkzeug').setLevel(logging.ERROR)  # disable Flask log messages
+log = logging.getLogger('igvweb_viewer')
+log.addHandler(logging.StreamHandler())
 
 app = flask.Flask(__name__)
 
-
 files_and_loci = [{'files': [], 'loci': []}]
-
 
 @app.route('/file/<path:path>', methods=['GET'])
 def static_proxy(path):
-    path = os.path.abspath("/"+path)
+    path = os.path.abspath(path.replace("|", "/"))
 
     # handle igv.js Range header which it uses to request a subset of a .bam
     range_header = flask.request.headers.get('Range', None)
     if not range_header:
+        log.info("Sending file %s" % path)
         return flask.send_from_directory(os.path.dirname(path),
                                          os.path.basename(path))
 
-    m = re.search('(\d+)-(\d+)', range_header)
+    log.info("Sending file %s bytes %s" % (path, range_header))
+    m = re.search('(\d+)-(\d*)', range_header)
     if not m:
         error_msg = "ERROR: unexpected range header syntax: %s" % range_header
-        print(error_msg)
+        log.error(error_msg)
         return error_msg
 
+    size = os.path.getsize(path)
     offset = int(m.group(1))
-    length = int(m.group(2)) - offset
+    length = int(m.group(2) or size) - offset
 
     data = None
     with open(path, 'rb') as f:
         f.seek(offset)
         data = f.read(length)
 
-    size = os.path.getsize(path)
     rv = flask.Response(data, 206, mimetype="application/octet-stream",
         direct_passthrough=True)
     rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(
@@ -66,7 +66,8 @@ def main(page):
     files_and_loci_dict['page'] = page
     files_and_loci_dict['next_page'] = page + 1 if page + 1 < len(files_and_loci) else None
 
-    print("Sending page: %(page)s" % locals())
+    log.info("--------")
+    log.info("Sending page: %(page)s" % locals())
 
     webpage = """
     <html>
@@ -83,7 +84,7 @@ def main(page):
             {% endfor %}
             </td>
         {% endif %}
-        {% if prev_page or next_page %}
+        {% if prev_page or prev_page == 0 or next_page %}
             <td width='120px'>
                 {% if prev_page or prev_page == 0 %}
                     <a href = '/page/{{ prev_page }}'>&lt; prev</a>
@@ -131,7 +132,7 @@ def main(page):
                     type: '{{ extension }}',
                     indexed: {{ indexed | tojson }},
                     name: '{{ name }}',
-                    url: '/file{{ filename }}',
+                    url: '/file/{{ filename }}',
                 });
             {% endfor %}
 
@@ -157,7 +158,7 @@ def main(page):
 
 
 def parse_locus(locus):
-    match = re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})", locus)
+    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})$", locus)
     if match:
         return match.group(1), int(match.group(2))
     else:
@@ -165,7 +166,7 @@ def parse_locus(locus):
 
 
 def parse_region(region):
-    match = re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})", region)
+    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})$", region)
     if match:
         return match.group(1), int(match.group(2)), int(match.group(3))
     else:
@@ -193,7 +194,13 @@ if __name__ == "__main__":
 
     args = p.parse_args()
 
+    if args.verbose:
+        log.setLevel(logging.INFO)
+    else:
+        log.setLevel(logging.WARNING)
+
     # process files and loci arg
+    log.info("---- Page 0 ----")
     previous_arg_was_a_locus = False  # used to decide when to start a new page
     for arg in args.files_or_loci:
         locus = parse_locus(arg)
@@ -201,7 +208,7 @@ if __name__ == "__main__":
             arg = "%s:%s-%s" % (locus[0], locus[1]-200, locus[1]+200)
 
         if parse_region(arg):
-            print("Region: " + arg)
+            log.info("Region: " + arg)
             files_and_loci[-1]['loci'].append(arg)
             previous_arg_was_a_locus = True
         elif os.path.isfile(arg):   # handle file args
@@ -211,9 +218,11 @@ if __name__ == "__main__":
                     'files': [],
                     'loci': [],
                 })
+                log.info("---- Page %d ----" % (len(files_and_loci) - 1))
             previous_arg_was_a_locus = False
 
             # get the parameters igv wants for each file
+            log.info("File: " + arg)
             filename = arg
             name = os.path.basename(filename)
             extension = filename.split('.')[-1]
@@ -223,17 +232,20 @@ if __name__ == "__main__":
             if extension == 'bam':
                 indexed = True
                 if not any(os.path.isfile(idx) for idx in [filename + ".bai", filename.replace(".bam", ".bai")]):
-                    print("WARNING: .bai index not found for %(filename)s. Skipping..." % locals())
+                    log.warn("WARNING: .bai index not found for %(filename)s. Skipping..." % locals())
                     continue
             elif extension in ['bed.gz', 'vcf.gz']:
                 extension = extension.replace('.gz', '')
                 indexed = os.path.isfile(filename + ".tbi")
             elif extension not in ['bed', 'wig', 'vcf']:
-                print("WARNING: unexpected file type: %(filename)s. Skipping..." % locals())
+                log.warn("WARNING: unexpected file type: %(filename)s. Skipping..." % locals())
                 continue
 
             files_and_loci[-1]['files'].append(
-                (filename, extension, indexed, name))
+                (filename.replace("/", "|"),  # workaround for Flask bug in handling url args with slashes
+                 extension,
+                 indexed,
+                 name))
 
         else:
             p.error("File doesn't exist: " + arg)
@@ -245,17 +257,15 @@ if __name__ == "__main__":
     # check that at least one locus was specified - nevermind loci are optional
     #if len(files_and_loci[-1]['loci']) == 0:
     #    if len(files_and_loci) > 1:
-    #        print("WARNING: no loci provided for filename(s): " + ",".join(files_and_loci[-1]['files']) + ". Skipping..")
+    #        log.info("WARNING: no loci provided for filename(s): " + ",".join(files_and_loci[-1]['files']) + ". Skipping..")
     #        del files_and_loci[-1]
     #    else:
     #        p.error("No loci provided.")
 
-    if args.verbose:
-        print(files_and_loci)
 
     log_message = "Listening on http://%s:%s" % (args.host, args.port)
     if socket.gethostname() != args.host:
         log_message += "  (aka. http://%s:%s)" % (socket.gethostname(), args.port)
-    print(log_message)
+    log.info(log_message)
 
     app.run(host=args.host, port=args.port, processes=4)
