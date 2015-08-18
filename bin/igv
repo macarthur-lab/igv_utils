@@ -78,5 +78,5 @@ for f in args.files_or_locus:
 
 try:
     igv_robot.execute()
-except Exception as e:
+except igv_api.IGVException as e:
     sys.exit("IGV crashed: %s" % e)
