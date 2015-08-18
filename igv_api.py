@@ -374,7 +374,7 @@ class IGVCommandLineRobot(_IGVRobot):
             with self._create_temp_batch_file() as f:
                 batch_filename = f.name
                 for c in commands:
-                    f.write(bytes("%s\n" % c, 'UTF-8'))
+                    f.write(("%s\n" % c).encode('UTF-8'))
         else:
             batch_filename = None
 
@@ -410,14 +410,14 @@ class IGVCommandLineRobot(_IGVRobot):
         logging.info("Launching IGV: " + igv_command)
         s = subprocess.Popen(igv_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         while True:
-            line = s.stdout.readline().strip('\n')
+            line = s.stdout.readline().decode('UTF-8').strip('\n')
             if line:
                 logging.info(line)
             elif s.poll() is not None:
                 break
 
         if s.returncode != 0:
-            raise IGVException("IGV exited with non-zero exit code: " + str(s.returncode))
+            raise IGVException("IGV exited with non-zero exit code: %s" % s.returncode)
 
         logging.info("Finished.")
 
