@@ -266,6 +266,6 @@ if __name__ == "__main__":
     log_message = "Listening on http://%s:%s" % (args.host, args.port)
     if socket.gethostname() != args.host:
         log_message += "  (aka. http://%s:%s)" % (socket.gethostname(), args.port)
-    log.info(log_message)
+    print(log_message)
 
     app.run(host=args.host, port=args.port, processes=4)
