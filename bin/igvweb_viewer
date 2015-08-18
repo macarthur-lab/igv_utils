@@ -225,7 +225,10 @@ if __name__ == "__main__":
             log.info("File: " + arg)
             filename = arg
             name = os.path.basename(filename)
-            extension = filename.split('.')[-1]
+            if name.endswith(".gz"):
+                extension = ".".join(filename.split('.')[-2:])
+            else:
+                extension = filename.split('.')[-1]
             indexed = False
 
             # validate file extension and index
@@ -234,7 +237,7 @@ if __name__ == "__main__":
                 if not any(os.path.isfile(idx) for idx in [filename + ".bai", filename.replace(".bam", ".bai")]):
                     log.warn("WARNING: .bai index not found for %(filename)s. Skipping..." % locals())
                     continue
-            elif extension in ['bed.gz', 'vcf.gz']:
+            elif extension in ['bed.gz', 'vcf.gz', 'gff.gz']:
                 extension = extension.replace('.gz', '')
                 indexed = os.path.isfile(filename + ".tbi")
             elif extension not in ['bed', 'wig', 'vcf']:
