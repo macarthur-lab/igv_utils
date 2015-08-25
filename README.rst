@@ -8,6 +8,8 @@ It includes the following executables:
 
 * :code:`igv`    Launches IGV from the command line and optionally makes it load some file(s) and jump to some locus. 
 * :code:`igv_plotter`   Automates taking IGV screenshots of one or more data files at one or more loci.
+* :code:`igvweb_viewer` Allows bam, vcf, and/or bed file tracks to be viewed in a web browser using @jrobinso's
+	pure HTML/javascript implementation of IGV: `igv.js <https://github.com/jrobinso>`_.
 
 Install
 ~~~~~~~~
@@ -38,9 +40,20 @@ Run
 
 To see all command line options, do:
 
+:code:`igvweb_viewer -h`
+
 :code:`igv_plotter -h`
 
 :code:`igv -h`
+
+**igvweb_viewer script** - usage example:
+
+This starts a webserver for viewing 3 files at 2 loci:
+
+:code:`igvweb_viewer my_file1.vcf  my_file2.bam  my_file3.bed 1:12345 chrX:12345`
+
+After starting this script, open your web browser to 127.0.0.1:8000 for an interactive
+browser-based IGV view of these files.
 
 **igv_plotter script** - usage example:
 
