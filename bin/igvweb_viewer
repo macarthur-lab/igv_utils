@@ -7,26 +7,63 @@ import os
 import re
 import socket
 
-logging.getLogger('werkzeug').setLevel(logging.ERROR)  # disable Flask log messages
+logging.getLogger('werkzeug').setLevel(logging.ERROR) # disable Flask log messages
+
 log = logging.getLogger('igvweb_viewer')
 log.addHandler(logging.StreamHandler())
 
 app = flask.Flask(__name__)
 
-files_and_loci = [{'files': [], 'loci': []}]
+# This data structure is populated before starting the web server. Each entry
+# in the top-level list is a dictionary representing an HTML page (eg. the 1st
+# dict represents the 1st web page the user will see).
+# The 'files' sublist contains file paths to be loaded as IGV tracks on this page.
+# The 'loci' sublist contains locus strings (eg. "chr1:12345") each of which
+# will become a 'jump to: <locus>' link on this page.
+# If there is more than one dict, 'prev', 'next' links will appear to allow the
+# user to navigate between these pages.
+HTML_PAGE_LIST = [
+    { 'files': [],
+       'loci': [],
+    }
+]
+
+# List of file paths that can be accessed through this server. WARNING: unless
+# the machine this script runs on is behind a firewall, anybody on the internet
+# will be able to access these files while this script is running.
+FILES_VISIBLE_THROUGH_WEB_SERVER = set()
+
+# Which client IPs are permitted to make requests to this server. If set to None,
+# all IPs will be permitted.
+PERMITTED_CLIENT_IP_ADDRESSES = set()
+
 
 @app.route('/file/<path:path>', methods=['GET'])
-def static_proxy(path):
-    path = os.path.abspath(path.replace("|", "/"))
+def send_file_contents(path):
+    relative_path = path.replace("|", "/")
+
+    client_ip_address = flask.request.remote_addr
+    if not is_permitted_IP_address(client_ip_address):
+        return "ERROR: your IP address (%s) is not permitted to view this data. " \
+               "If you are behind a firewall or can share this data publicly, run " \
+               "igvweb_viewer with -a to permit all IP addresses." % client_ip_address
+
+    # as a security precaution, only allow access to files that were specified in the command line args
+    if relative_path not in FILES_VISIBLE_THROUGH_WEB_SERVER:
+        error_msg = "ERROR: unexpected file path requested: %s" % relative_path
+        log.error(error_msg)
+        return error_msg
+
+    path = os.path.abspath(relative_path)
 
     # handle igv.js Range header which it uses to request a subset of a .bam
     range_header = flask.request.headers.get('Range', None)
     if not range_header:
-        log.info("Sending file %s" % path)
+        #log.info("sending %(relative_path)s to %(client_ip_address)s" % locals())
         return flask.send_from_directory(os.path.dirname(path),
                                          os.path.basename(path))
 
-    log.info("Sending file %s bytes %s" % (path, range_header))
+    #log.info("sending %(relative_path)s %(range_header)s to %(client_ip_address)s" % locals())
     m = re.search('(\d+)-(\d*)', range_header)
     if not m:
         error_msg = "ERROR: unexpected range header syntax: %s" % range_header
@@ -50,26 +87,31 @@ def static_proxy(path):
     return rv
 
 
-#@app.route('/ls', methods=['GET'])
-#def list_files():
-#    return ""
+@app.route('/', defaults={'page_number': 0})
+@app.route('/page/<int:page_number>')
+def send_html_page(page_number):
+    """Flask handler that generates all html web pages"""
+
+    if page_number >= len(HTML_PAGE_LIST):
+        return "Invalid page: %(page_number)s. To create more pages, specify " \
+               "more files on the command line." % locals()
+
+    client_ip_address = flask.request.remote_addr
+    if not is_permitted_IP_address(client_ip_address):
+        return "ERROR: your IP address (%s) is not permitted to view this page. " \
+               "If you are behind a firewall or can share this data publicly, run " \
+               "igvweb_viewer with -a to permit all IP addresses." % client_ip_address
 
 
-@app.route('/', defaults={'page': 0})
-@app.route('/page/<int:page>')
-def main(page):
-    if page >= len(files_and_loci):
-        return "Invalid page: %(page)s. To create more pages, specify more files on the command line." % locals()
+    html_page_dict = HTML_PAGE_LIST[page_number]
+    html_page_dict['prev_page'] = page_number - 1 if page_number > 0 else None
+    html_page_dict['page'] = page_number
+    html_page_dict['next_page'] = page_number + 1 if page_number + 1 < len(HTML_PAGE_LIST) else None
 
-    files_and_loci_dict = files_and_loci[page]
-    files_and_loci_dict['prev_page'] = page - 1 if page > 0 else None
-    files_and_loci_dict['page'] = page
-    files_and_loci_dict['next_page'] = page + 1 if page + 1 < len(files_and_loci) else None
+    #log.info("--------")
+    log.info("sending page #%(page_number)s to %(client_ip_address)s" % locals())
 
-    log.info("--------")
-    log.info("Sending page: %(page)s" % locals())
-
-    webpage = """
+    html_page_template = """
     <html>
     <head><title>IGV web viewer</title></head>
     <body>
@@ -125,7 +167,10 @@ def main(page):
             var div = $("#igv_container")[0];
             var tracks = [];
 
-           //tracks.push({ url: '/static/read_viz/gencode.v19.sorted.bed', name: "gencode v19" });
+            //tracks.push({
+            //    url: '/static/read_viz/gencode.v19.sorted.bed',
+            //    name: "gencode v19"
+            //});
 
             {% for filename, extension, indexed, name in files %}
                 tracks.push({
@@ -154,10 +199,39 @@ def main(page):
     </html>
     """
 
-    return flask.render_template_string(webpage, **files_and_loci_dict)
+    return flask.render_template_string(html_page_template, **html_page_dict)
+
+
+def is_permitted_IP_address(ip_address):
+    """Takes an IP address string and returns True if it's ok to send data to this IP"""
+    if PERMITTED_CLIENT_IP_ADDRESSES is None:
+        return True
+
+    if ip_address in PERMITTED_CLIENT_IP_ADDRESSES:
+        return True
+
+    # COMMENTED OUT - request handlers appear to run in separate processes, so not possible to share state between them
+    # ask for manual confirmation on the command line. NOTE: This could occupy
+    # all server request-handling threads if multiple requests from non-permitted IP
+    # addresses come in.
+    #i = ""
+    #while True:
+    #    i = raw_input("Allow requests from IP %(ip_address)s [Y/n]? " % locals())
+    #    if i.lower() == "y":
+    #        PERMITTED_CLIENT_IP_ADDRESSES.add(ip_address)
+    #        logging.info("accepting request from %(ip_address)s" % locals())
+    #        return True
+    #    elif i.lower() == "n":
+    #        logging.info("rejecting request from %(ip_address)s" % locals())
+    #        return Fasle
+    #    else:
+    #        print("ERROR: please enter Y or n")
 
 
 def parse_locus(locus):
+    """Takes a string like "chrX:12345" and returns ("chrX", 12345),
+    or None if parsing failed.
+    """
     match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})$", locus)
     if match:
         return match.group(1), int(match.group(2))
@@ -166,6 +240,9 @@ def parse_locus(locus):
 
 
 def parse_region(region):
+    """Takes a string like "chrX:12345-54321" and returns ("chrX", 12345, 54321)
+    or None if parsing failed.
+    """
     match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})$", region)
     if match:
         return match.group(1), int(match.group(2)), int(match.group(3))
@@ -173,56 +250,75 @@ def parse_region(region):
         return None
 
 
-if __name__ == "__main__":
-    p = argparse.ArgumentParser(
-        description="This script launches a webserver that allows passed-in "
-                    "files to be viewed in a browser using Jim Robinson's "
-                    "igv.js (https://github.com/igvteam/igv.js).",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
+                        permitted_client_ip_addresses=["127.0.0.1"]):
+    """
+    The main entry point for igvweb_viewer.
 
-    p.add_argument("files_or_loci", metavar="files or loci", nargs="+",
-        help="Here you can list files to load and/or loci to jump to."
-            "Loci can be specified as, for example, X:12345 or chr1:12345-54321. "
-            "For a list of accepted file formats, see "
-            "https://www.broadinstitute.org/igv/RecommendedFileFormats")
+    Args:
+        files_and_loci: A list of file paths to display in igv.js, optionally
+            interspersed with loci to jump to. Files can be: bed, wig, vcf,
+            and/or bam. Loci can be specified as, for example, "X:12345" or
+            "chr1:12345-54321".
+        verbose: whether to print detailed logging info.
+        host: network interface the server should listen on  ("0.0.0.0" will
+            listen on all interfaces, while "127.0.0.1" will listen on one)
+        port: network port the server should listen on
+        permitted_client_ip_addresses: A list of IP address strings. Requests
+            coming from any other IP address will trigger a WARNING log
+            message, and no response will be sent unless confirmation to go ahead
+            is manually provided on the command line. By default this list just
+            contains "127.0.0.1" which means only the computer on which this
+            script is running will be able to make requests (eg. the web browser
+            must be running on the same computer as this script). Set this
+            to None to allow connections from any IP address.
+    """
 
-    p.add_argument("--host", help="Host name or ip address to listen on. "
-        "For computers with more than one network interface, 0.0.0.0 will listen "
-        "on all interfaces.", default="0.0.0.0")
-    p.add_argument("-p", "--port", help="Port to listen on.", default=8000)
-    p.add_argument("-v", "--verbose", action="store_true", help="Enable detailed logging output.")
+    # validate args and apply verbose arg
+    assert type(files_and_loci) is str or type(files_and_loci) is list, \
+        "files_and_loci arg type must be list or str. Got %s instead." % type(files_and_loci)
 
-    args = p.parse_args()
+    assert permitted_client_ip_addresses is None or len(permitted_client_ip_addresses) > 0, \
+        "permitted_client_ip_addresses list is empty(?) %s" % str(permitted_client_ip_addresses)
 
-    if args.verbose:
+    if type(files_and_loci) is str:
+        files_and_loci = files_and_loci.split()  # split the string into tokens
+
+    if verbose:
         log.setLevel(logging.INFO)
     else:
         log.setLevel(logging.WARNING)
 
+    # init the global PERMITTED_CLIENT_IP_ADDRESSES set for use by request handlers
+    global PERMITTED_CLIENT_IP_ADDRESSES
+    if permitted_client_ip_addresses is None:
+        PERMITTED_CLIENT_IP_ADDRESSES = None
+    else:
+        PERMITTED_CLIENT_IP_ADDRESSES = set(permitted_client_ip_addresses)
+
     # process files and loci arg
-    log.info("---- Page 0 ----")
+    log.info("---- page 0 ----")
     previous_arg_was_a_locus = False  # used to decide when to start a new page
-    for arg in args.files_or_loci:
+    for arg in files_and_loci:
         locus = parse_locus(arg)
         if locus:  # handle locus args
             arg = "%s:%s-%s" % (locus[0], locus[1]-200, locus[1]+200)
-
         if parse_region(arg):
-            log.info("Region: " + arg)
-            files_and_loci[-1]['loci'].append(arg)
+            log.info("region: " + arg)
+            HTML_PAGE_LIST[-1]['loci'].append(arg)
             previous_arg_was_a_locus = True
         elif os.path.isfile(arg):   # handle file args
-            if previous_arg_was_a_locus and len(files_and_loci[-1]['files']) > 0:
+            if previous_arg_was_a_locus and len(HTML_PAGE_LIST[-1]['files']) > 0:
                 # start a new set of files + loci to be displayed on a new page
-                files_and_loci.append({
+                HTML_PAGE_LIST.append({
                     'files': [],
                     'loci': [],
                 })
-                log.info("---- Page %d ----" % (len(files_and_loci) - 1))
+                log.info("---- page %d ----" % (len(HTML_PAGE_LIST) - 1))
             previous_arg_was_a_locus = False
 
             # get the parameters igv wants for each file
-            log.info("File: " + arg)
+            log.info("file: " + arg)
             filename = arg
             name = os.path.basename(filename)
             if name.endswith(".gz"):
@@ -237,15 +333,24 @@ if __name__ == "__main__":
                 if not any(os.path.isfile(idx) for idx in [filename + ".bai", filename.replace(".bam", ".bai")]):
                     log.warn("WARNING: .bai index not found for %(filename)s. Skipping..." % locals())
                     continue
+
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".bai")
             elif extension in ['bed.gz', 'vcf.gz', 'gff.gz']:
                 extension = extension.replace('.gz', '')
                 indexed = os.path.isfile(filename + ".tbi")
-            elif extension not in ['bed', 'wig', 'vcf']:
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".tbi")
+            elif extension in ['bed', 'wig', 'vcf']:
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
+            else:
                 log.warn("WARNING: unexpected file type: %(filename)s. Skipping..." % locals())
                 continue
 
-            files_and_loci[-1]['files'].append(
-                (filename.replace("/", "|"),  # workaround for Flask bug in handling url args with slashes
+            # replace / with | to work around a Flask bug where url arg values containing slashes are handled
+            # badly - making it impossible to say whether the filename originally had a leading slash or not
+            HTML_PAGE_LIST[-1]['files'].append(
+                (filename.replace("/", "|"),
                  extension,
                  indexed,
                  name))
@@ -254,21 +359,59 @@ if __name__ == "__main__":
             p.error("File doesn't exist: " + arg)
 
     # check that at least one file was specified
-    if len(files_and_loci[-1]['files']) == 0:
+    if len(HTML_PAGE_LIST[-1]['files']) == 0:
         p.error("No files provided.")
 
-    # check that at least one locus was specified - nevermind loci are optional
-    #if len(files_and_loci[-1]['loci']) == 0:
-    #    if len(files_and_loci) > 1:
-    #        log.info("WARNING: no loci provided for filename(s): " + ",".join(files_and_loci[-1]['files']) + ". Skipping..")
-    #        del files_and_loci[-1]
+    # commented out because decided that specifying loci should be optional.
+    #if len(HTML_PAGE_LIST[-1]['loci']) == 0:
+    #    if len(HTML_PAGE_LIST) > 1:
+    #        log.info("WARNING: no loci provided for filename(s): " + ",".join(HTML_PAGE_LIST[-1]['files']) + ". Skipping..")
+    #        del HTML_PAGE_LIST[-1]
     #    else:
     #        p.error("No loci provided.")
 
 
-    log_message = "Listening on http://%s:%s" % (args.host, args.port)
-    if socket.gethostname() != args.host:
-        log_message += "  (aka. http://%s:%s)" % (socket.gethostname(), args.port)
+    log_message = "listening on http://%s:%s" % (host, port)
+    if socket.gethostname() != host:
+        log_message += "  (aka. http://%s:%s)" % (socket.gethostname(), port)
     print(log_message)
 
-    app.run(host=args.host, port=args.port, processes=4)
+    app.run(host=host, port=port, processes=4)
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(
+        description="This script takes a list of files on the command line and, "
+                    "after starting up a webserver, prints out the url of "
+                    "the computer it's running on. You can then point your web "
+                    "browser to this url to see these files in igv.js - which is "
+                    "Jim Robinson's web-based implementation of IGV "
+                    "(https://github.com/igvteam/igv.js). ",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    p.add_argument("files_and_loci", metavar="files and loci", nargs="+",
+        help="One or more files to load, along with (optionally) loci to jump to. "
+            "Files can be: bed, wig, vcf, and/or bam. Loci can be specified as, "
+            "for example, X:12345 or chr1:12345-54321. ")
+
+    p.add_argument("--host", help="Host name or ip address to listen on. "
+        "For computers with more than one network interface, 0.0.0.0 will listen "
+        "on all interfaces.", default="0.0.0.0")
+    p.add_argument("-p", "--port", help="Port to listen on.", default=8000)
+    p.add_argument("-a", "--any-ip", action="store_true",
+        help="Permit connections from any IP address. "
+            "WARNING: unless the computer this script runs on is behind a firewall, "
+            "anybody on the internet may be able to access the given list of files while "
+            "this script is running.")
+    p.add_argument("-v", "--verbose", action="store_true",
+        help="Enable detailed logging output.")
+
+    args = p.parse_args()
+
+    permitted_client_ip_addresses = None if args.any_ip else ["127.0.0.1"]
+
+    start_igvweb_server(args.files_and_loci,
+                        verbose=args.verbose,
+                        host=args.host,
+                        port=args.port,
+                        permitted_client_ip_addresses=permitted_client_ip_addresses,)
