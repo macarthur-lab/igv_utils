@@ -14,26 +14,12 @@ It includes the following executables:
 Install
 ~~~~~~~~
 
-* If you don't have IGV installed yet, `download the IGV binary distribution <https://github.com/igvteam/igv/releases>`_ and unzip it in some directory (for example :code:`~/bin`). 
+* To install for all users, run:   
+  :code:`pip install igv_plotter`   
 
-* Run:   :code:`pip install igv_plotter`   
-  
-  (to install it in your home directory, run it with :code:`--user` and add ~/.local/bin to PATH)
-    
+* To install in your home directory (eg. if you don't have permissions to install for all users), add ~/.local/bin to your PATH and run:
+  :code:`pip install igv_plotter --user` 
 
-Configure
-~~~~~~~~~
-
-For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of :code:`igv.jar`.
-This can be set either using the :code:`--igv-jar-path` command line option or by creating a  
-:code:`~/.igv_plotter` config file and adding this line to it:
-
-:code:`igv-jar-path = <full path of igv.jar>`
-
-Also, any of the other :code:`igv_plotter` or :code:`igv` command line options can be set in that config
-file by putting:
-
-:code:`<command line option (without --)> = <value>`
 
 Run
 ~~~
@@ -66,6 +52,13 @@ This loads 3 files, and takes 2 snapshots:
 This launches IGV with 2 files loaded at locus 1:12345:
 
 :code:`igv  my_file1.vcf  my_file3.bed 1:12345`
+
+
+Configure
+~~~~~~~~~
+
+An :code:`~/.igv_plotter` config file can be created and used to persitantly set any :code:`igv_plotter` or :code:`igv` command line options, by using lines like:
+:code:`<command line option (without --)> = <value>`
 
 
 Contribute

@@ -15,7 +15,6 @@ parser = configargparse.ArgParser(description="This script takes IGV snapshots."
                                   formatter_class=configargparse.ArgumentDefaultsRawHelpFormatter)
 
 main_args = parser.add_argument_group("core arguments")
-main_args.add("--igv-jar-path", help="Path to igv.jar", required=True)
 main_args.add("-o", "--output", help="Output image file prefix", default="igv_")
 main_args.add("-L", "--locus-file", dest="locus_file", metavar="LOCUS_FILE", help="Text file with one locus per line "
     "formatted like X:12345 or chr1:12345-54321. A snapshot will be taken at each locus.")
@@ -37,6 +36,7 @@ extra_args.add("-p", "--preference", action="append", metavar="KEY=VALUE", help=
     "(eg. -p DEFAULT_FONT_SIZE=10). For a full list of keys & example values that can be set, see: "
     "https://github.com/broadinstitute/IGV/blob/master/src/org/broad/igv/PreferenceManager.java#L928")
 extra_args.add("--view-as-pairs", action="store_true", help="In .bam tracks, view reads as pairs")
+main_args.add("--igv-jar-path", help="Path to igv.jar", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "igv.jar"))
 g1 = extra_args.add_mutually_exclusive_group()
 g1.add("--expand", dest="compactness_command", action="store_const", const="expand", help="Expand all tracks")
 g1.add("--squish", dest="compactness_command", action="store_const", const="squish", help="Squish all tracks")

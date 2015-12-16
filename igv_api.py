@@ -315,7 +315,7 @@ class IGVCommandLineRobot(_IGVRobot):
     """Sends commands to IGV through a batch file. This class should be used unless IGV is already running."""
 
     def __init__(self,
-                 igv_jar_path="igv.jar",
+                 igv_jar_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin/igv.jar"),
                  hide_igv_window=True,
                  igv_window_width=800,
                  igv_window_height=600,

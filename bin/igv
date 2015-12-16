@@ -19,7 +19,7 @@ parser = configargparse.ArgParser(description="Script for starting IGV, optional
 parser.add("files_or_locus", metavar="files and/or locus", nargs="*", help="Optionally, one or more files to load into "
     "IGV at startup and/or a locus to jump to (for example chr1:12345). For a list of accepted IGV file formats,"
     " see https://www.broadinstitute.org/igv/RecommendedFileFormats")
-parser.add("--igv-jar-path", help="Path to igv.jar", required=True)
+parser.add("--igv-jar-path", help="Path to igv.jar", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "igv.jar"))
 parser.add("--width", type=int, help="IGV window width.", default=800)
 parser.add("--height", type=int, help="IGV window height.", default=600)
 parser.add("-c", "--config-file", help="Config file path", is_config_file=True)

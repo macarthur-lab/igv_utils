@@ -72,7 +72,7 @@ if command not in ['test', 'coverage']:
 
 setup(
     name='igv_plotter',
-    version="0.9.2",
+    version="0.9.5",
     description='python interface to IGV that simplifies creating screenshots of BAMs, VCFs, BEDs, etc for one-off '
                 'spot checking or automated / scripted image collection',
     long_description=long_description,
@@ -103,5 +103,5 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     test_suite='tests',
-    scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv']
+    scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv', 'bin/igv.jar']
 )
