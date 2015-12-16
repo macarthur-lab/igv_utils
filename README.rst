@@ -8,29 +8,29 @@ It includes the following executables:
 
 * :code:`igv`    Launches IGV from the command line and optionally makes it load some file(s) and jump to some locus. 
 * :code:`igv_plotter`   Automates taking IGV screenshots of one or more data files at one or more loci.
-* :code:`igvweb_viewer` Allows bam, vcf, and/or bed file tracks to be viewed in a web browser using @jrobinso's
-	pure HTML/javascript implementation of IGV: `igv.js <https://github.com/jrobinso>`_.
+* :code:`igvweb_viewer`  Allows bam, vcf, and/or bed file tracks to be viewed in a web browser using `igv.js <https://github.com/jrobinso>`_.
+*  
 
 Install
 ~~~~~~~~
 
-* If you don't have IGV installed yet, `download the IGV binary distribution <https://github.com/igvteam/igv/releases>`_ and unzip it in some directory (for example :code:`~/bin`). If you do have it already, find the install directory. 
+* If you don't have IGV installed yet, `download the IGV binary distribution <https://github.com/igvteam/igv/releases>`_ and unzip it in some directory (for example :code:`~/bin`). 
 
 * Run:   :code:`pip install igv_plotter`   
   
-  (add :code:`--user` option to install in your home directory)
+  (to install it in your home directory, run it with :code:`--user` and add ~/.local/bin to PATH)
     
 
 Configure
 ~~~~~~~~~
 
-For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of :code:`igv.jar` (see Install section).
-This can be set using either the :code:`--igv-jar-path` command line option or by setting it in the 
-:code:`~/.igv_plotter` config file by putting the following line:
+For the :code:`igv_plotter` or :code:`igv` scripts to work, they need to know the path of :code:`igv.jar`.
+This can be set either using the :code:`--igv-jar-path` command line option or by creating a  
+:code:`~/.igv_plotter` config file and adding this line to it:
 
 :code:`igv-jar-path = <full path of igv.jar>`
 
-Also, any of the other :code:`igv_plotter` or :code:`igv` command line options can be set in this config
+Also, any of the other :code:`igv_plotter` or :code:`igv` command line options can be set in that config
 file by putting:
 
 :code:`<command line option (without --)> = <value>`
@@ -38,7 +38,7 @@ file by putting:
 Run
 ~~~
 
-To see all command line options, do:
+To see all command line options, you can do:
 
 :code:`igvweb_viewer -h`
 
