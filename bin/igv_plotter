@@ -12,21 +12,21 @@ import igv_api
 
 parser = configargparse.ArgParser(description="This script takes IGV snapshots.",
                                   default_config_files=["~/.igv_plotter", "igv_plotter.yaml"],
-                                  formatter_class=configargparse.DefaultsFormatter)
+                                  formatter_class=configargparse.ArgumentDefaultsRawHelpFormatter)
 
 main_args = parser.add_argument_group("core arguments")
 main_args.add("--igv-jar-path", help="Path to igv.jar", required=True)
 main_args.add("-o", "--output", help="Output image file prefix", default="igv_")
-main_args.add("-L", "--locus-file", dest="locus_file", metavar="LOCUS_FILE", help="File with one locus per line "
+main_args.add("-L", "--locus-file", dest="locus_file", metavar="LOCUS_FILE", help="Text file with one locus per line "
     "formatted like X:12345 or chr1:12345-54321. A snapshot will be taken at each locus.")
 main_args.add("files_or_loci", metavar="files or loci", nargs="+", help="Files to load into IGV and/or loci at which to "
-    "take snapshots (as an alternative to -L). Locus format X: can be 12345 or chr1:12345-54321. Files and loci "
+    "take snapshots (as an alternative to -L). Locus format can be X:12345 or chr1:12345-54321. Files and loci "
     "will be processed in the order they are specified, so if the command line order is 'file1.bed 1:12345 "
     "file2.bed', file1 will be loaded, then a snapshot will be taken, then file2 will be loaded. "
     "For a list of accepted IGV file formats, see https://www.broadinstitute.org/igv/RecommendedFileFormats")
-main_args.add("-v", "--verbose", action="store_true", help="Enable detailed logging output from igv_plotter and IGV.")
+main_args.add("-v", "--verbose", action="store_true", help="Show log messages from igv_plotter and IGV.")
 
-extra_args = parser.add_argument_group("additional options")
+extra_args = parser.add_argument_group("additional options (YMMV - sometimes IGV ignores these)")
 extra_args.add("--width", type=int, help="IGV window width.", default=800)
 extra_args.add("--height", type=int, help="IGV window height.", default=600)
 extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
@@ -104,6 +104,8 @@ if args.preference:
 # files, loci, regions
 for f in args.files_or_loci:
     if os.path.isfile(f):
+        if f.endswith(".bam") and not (os.path.isfile(f[:-1]+"i") or os.path.isfile(f+".bai")):
+            parser.error(".bai index not found for bam file: " + f)
         igv_robot.load(f)
         if args.compactness_command is not None:
             igv_robot.command(args.compactness_command)
