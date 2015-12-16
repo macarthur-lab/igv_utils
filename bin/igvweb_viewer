@@ -59,7 +59,7 @@ def send_file_contents(path):
     # handle igv.js Range header which it uses to request a subset of a .bam
     range_header = flask.request.headers.get('Range', None)
     if not range_header:
-        #log.info("sending %(relative_path)s to %(client_ip_address)s" % locals())
+        log.info("sending %(relative_path)s to %(client_ip_address)s" % locals())
         return flask.send_from_directory(os.path.dirname(path),
                                          os.path.basename(path))
 
@@ -73,6 +73,8 @@ def send_file_contents(path):
     size = os.path.getsize(path)
     offset = int(m.group(1))
     length = int(m.group(2) or size) - offset
+
+    log.info("sending %(relative_path)s bytes %(offset)s+%(length)s/%(size)s to %(client_ip_address)s" % locals())
 
     data = None
     with open(path, 'rb') as f:
@@ -143,28 +145,47 @@ def send_html_page(page_number):
         {% endif %}
         </tr></table>
 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/typeaheadjs.css">
+    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/css/font-awesome.min.css">
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/typeahead.bundle.min.js"></script>
+
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery.tablesorter.pager.js"></script>
+    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/theme.default.css">
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/underscore-min.js"></script>
+
+    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/bootstrap.min.css">
+    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/style.css">
+    
+    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/d3.v3.min.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>
+
+
         <div id='igv_container'></div>
 
-         <!-- jQuery and jQuery UI -->
-         <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+            <!-- jQuery and jQuery UI -->
+          <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+          <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/> <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 
-        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/>
+          <!-- Google Fonts and Font awesome -->
+          <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=PT+Sans:400,700'> <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=Open+Sans'>
+          <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 
-         <!-- Google Fonts and Font awesome -->
-         <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=PT+Sans:400,700'>
-         <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=Open+Sans'>
-         <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+          <!-- Bootstrap JS - for demo only, NOT REQUIRED FOR IGV -->
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.22.2/js/jquery.tablesorter.js"></script>
 
-         <!-- Bootstrap JS - for demo only, NOT REQUIRED FOR IGV -->
-         <script src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
-         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.22.2/js/jquery.tablesorter.js"></script>
-
-         <link rel="stylesheet" type="text/css" href="http://igv.org/web/beta/igv-beta.css">
-         <script type="text/javascript" src="http://igv.org/web/beta/igv-beta.min.js"></script>
+          <!-- igv.js -->
+          <link rel="stylesheet" type="text/css" href="http://igv.org/web/beta/igv-beta.css">
+          <script type="text/javascript" src="http://igv.org/web/beta/igv-beta.js"></script>
 
          <script type="text/javascript">
-            var div = $("#igv_container")[0];
+            var igv_div = $("#igv_container")[0];
             var tracks = [];
 
             //tracks.push({
@@ -174,11 +195,12 @@ def send_html_page(page_number):
 
             {% for filename, extension, indexed, name in files %}
                 tracks.push({
-                    type: '{{ extension }}',
-                    indexed: {{ indexed | tojson }},
                     name: '{{ name }}',
                     url: '/file/{{ filename }}',
                 });
+                //type: '{{ extension }}',ll
+                //indexed: {{ indexed | tojson }},
+
             {% endfor %}
 
            var options = {
@@ -189,7 +211,7 @@ def send_html_page(page_number):
               tracks: tracks,
            };
 
-           browser = igv.createBrowser(div, options);
+           browser = igv.createBrowser(igv_div, options);
 
            $('#reset-read-viz').click(function() {
               igv.browser.search(locus);
@@ -336,6 +358,7 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
 
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".bai")
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename.replace(".bam", ".bai"))
             elif extension in ['bed.gz', 'vcf.gz', 'gff.gz']:
                 extension = extension.replace('.gz', '')
                 indexed = os.path.isfile(filename + ".tbi")
