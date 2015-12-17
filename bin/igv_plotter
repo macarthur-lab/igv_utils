@@ -28,6 +28,8 @@ main_args.add("-v", "--verbose", action="store_true", help="Show log messages fr
 extra_args = parser.add_argument_group("additional options (YMMV - sometimes IGV ignores these)")
 extra_args.add("--width", type=int, help="IGV window width.", default=800)
 extra_args.add("--height", type=int, help="IGV window height.", default=600)
+extra_args.add("--max-panel-height", type=int, help="IGV max panel height.", default=600)
+
 extra_args.add("-c", "--config-file", help="Config file path", is_config_file=True)
 extra_args.add("-m", "--max-memory", help="IGV max memory limit (eg. 2G)", default="1024M")
 extra_args.add("-g", "--genome", help="Either the local path of a .genome file, or a genome id (eg. hg19) chosen from "
@@ -109,6 +111,8 @@ for f in args.files_or_loci:
         igv_robot.load(f)
         if args.compactness_command is not None:
             igv_robot.command(args.compactness_command)
+        if args.max_panel_height is not None:
+            igv_robot.max_panel_height(args.max_panel_height)
     elif is_valid_locus_or_region(f):
         take_snapshot(locus_or_region=f)
     else:
@@ -119,12 +123,12 @@ if args.locus_file:
         parser.error("File doesn't exist: " + args.locus_file)
 
     with open(args.locus_file) as f:
-    # parse file that contains loci or regions
-	    for i, line in enumerate(f):
-			line = line.strip()
-			if not is_valid_locus_or_region(line):
-				parser.error("%(file_path)s line %(i)s: invalid region or locus: %(line)s" % locals())
-			take_snapshot(locus_or_region=line)
+        # parse file that contains loci or regions
+        for i, line in enumerate(f):
+            line = line.strip()
+            if not is_valid_locus_or_region(line):
+                parser.error("%(file_path)s line %(i)s: invalid region or locus: %(line)s" % locals())
+            take_snapshot(locus_or_region=line)
 
 igv_robot.exit_igv()
 
