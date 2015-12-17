@@ -103,5 +103,6 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     test_suite='tests',
-    scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv', 'bin/igv.jar']
+    scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv'],
+    data_files=[('lib', ['lib/igv.jar'])],    
 )
