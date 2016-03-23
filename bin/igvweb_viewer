@@ -55,7 +55,17 @@ def send_file_contents(path):
         return error_msg
 
     path = os.path.abspath(relative_path)
+    
+    if path.endswith('.bam.bai'):
+        if not os.path.isfile(path):
+            path = path.replace('.bam.bai', '.bai')
+    elif path.endswith('.bai'):
+        if not os.path.isfile(path):
+            path = path.replace('.bai', '.bam.bai')
 
+        
+        
+            
     # handle igv.js Range header which it uses to request a subset of a .bam
     range_header = flask.request.headers.get('Range', None)
     if not range_header:
@@ -254,9 +264,9 @@ def parse_locus(locus):
     """Takes a string like "chrX:12345" and returns ("chrX", 12345),
     or None if parsing failed.
     """
-    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})$", locus)
+    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9,]{1,10})$", locus)
     if match:
-        return match.group(1), int(match.group(2))
+        return match.group(1), int(match.group(2).replace(",", ""))
     else:
         return None
 
