@@ -6,6 +6,13 @@ import logging
 import os
 import re
 import socket
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
+
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR) # disable Flask log messages
 
@@ -22,11 +29,7 @@ app = flask.Flask(__name__)
 # will become a 'jump to: <locus>' link on this page.
 # If there is more than one dict, 'prev', 'next' links will appear to allow the
 # user to navigate between these pages.
-HTML_PAGE_LIST = [
-    { 'files': [],
-       'loci': [],
-    }
-]
+HTML_PAGE_LIST = [{'files': [], 'loci': []}]
 
 # List of file paths that can be accessed through this server. WARNING: unless
 # the machine this script runs on is behind a firewall, anybody on the internet
@@ -36,10 +39,26 @@ FILES_VISIBLE_THROUGH_WEB_SERVER = set()
 # Which client IPs are permitted to make requests to this server. If set to None,
 # all IPs will be permitted.
 PERMITTED_CLIENT_IP_ADDRESSES = set()
+STATIC_DIR = os.path.abspath(os.path.dirname(__file__) + "/../../static/")
+
+REFERENCE_GENOME_SPEC = {'id': 'hg19'}
 
 
-@app.route('/file/<path:path>', methods=['GET'])
+@app.route('/js/<path>', methods=['GET'])
+@app.route('/css/<path>', methods=['GET'])
+@app.route('/css/img/<path>', methods=['GET'])
+@app.route('/fonts/<path>', methods=['GET'])
+def send_static_files(path):
+    relative_path = flask.request.path.lstrip('/').split('?')[0]
+
+    log.info("sending: %s/%s" % (STATIC_DIR, relative_path))
+    return flask.send_from_directory(STATIC_DIR, relative_path)
+
+
+@app.route('/file/<path>', methods=['GET'])
 def send_file_contents(path):
+    """Handles IGV.js requests"""
+
     relative_path = path.replace("|", "/")
 
     client_ip_address = flask.request.remote_addr
@@ -63,9 +82,6 @@ def send_file_contents(path):
         if not os.path.isfile(path):
             path = path.replace('.bai', '.bam.bai')
 
-        
-        
-            
     # handle igv.js Range header which it uses to request a subset of a .bam
     range_header = flask.request.headers.get('Range', None)
     if not range_header:
@@ -116,6 +132,7 @@ def send_html_page(page_number):
 
 
     html_page_dict = HTML_PAGE_LIST[page_number]
+    html_page_dict['reference_genome_spec'] = REFERENCE_GENOME_SPEC
     html_page_dict['prev_page'] = page_number - 1 if page_number > 0 else None
     html_page_dict['page'] = page_number
     html_page_dict['next_page'] = page_number + 1 if page_number + 1 < len(HTML_PAGE_LIST) else None
@@ -156,52 +173,19 @@ def send_html_page(page_number):
         </tr></table>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/typeaheadjs.css">
-    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/css/font-awesome.min.css">
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery-1.11.1.min.js"></script>
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/bootstrap.min.js"></script>
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/typeahead.bundle.min.js"></script>
-
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery.tablesorter.min.js"></script>
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/jquery.tablesorter.pager.js"></script>
-    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/theme.default.css">
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/underscore-min.js"></script>
-
-    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/bootstrap.min.css">
-    <link rel=stylesheet type=text/css href="http://dmz-exac-prod-demo.broadinstitute.org/static/style.css">
-    
-    <script type="text/javascript" src="http://dmz-exac-prod-demo.broadinstitute.org/static/d3.v3.min.js"></script>
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script>
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>
-
-
-        <div id='igv_container'></div>
-
-            <!-- jQuery and jQuery UI -->
-          <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-          <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/> <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
-
-          <!-- Google Fonts and Font awesome -->
-          <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=PT+Sans:400,700'> <link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=Open+Sans'>
-          <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
-
-          <!-- Bootstrap JS - for demo only, NOT REQUIRED FOR IGV -->
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.22.2/js/jquery.tablesorter.js"></script>
+    <div id='igv_container'></div>
 
           <!-- igv.js -->
-          <link rel="stylesheet" type="text/css" href="http://igv.org/web/beta/igv-beta.css">
-          <script type="text/javascript" src="http://igv.org/web/beta/igv-beta.js"></script>
+          <link rel="stylesheet" type="text/css" href="/css/jquery-ui.css"/>
+          <link rel="stylesheet" type="text/css" href="/css/font-awesome.min.css">
+          <link rel="stylesheet" type="text/css" href="/css/igv-1.0.1.css">
+          <script type="text/javascript" src="/js/jquery.min.js"></script>
+          <script type="text/javascript" src="/js/jquery-ui.min.js"></script>
+          <script type="text/javascript" src="/js/igv-1.0.1.js"></script>
 
          <script type="text/javascript">
             var igv_div = $("#igv_container")[0];
             var tracks = [];
-
-            //tracks.push({
-            //    url: '/static/read_viz/gencode.v19.sorted.bed',
-            //    name: "gencode v19"
-            //});
 
             {% for filename, extension, indexed, name in files %}
                 tracks.push({
@@ -215,9 +199,9 @@ def send_html_page(page_number):
 
            var options = {
               showCommandBar: true,
-              genome: 'hg19',
-              locus: '{{ loci[0] }}',
               showKaryo: false,
+              reference: {{ reference_genome_spec  | tojson }},
+              locus: '{{ loci[0] }}',
               tracks: tracks,
            };
 
@@ -242,10 +226,10 @@ def is_permitted_IP_address(ip_address):
     if ip_address in PERMITTED_CLIENT_IP_ADDRESSES:
         return True
 
-    # COMMENTED OUT - request handlers appear to run in separate processes, so not possible to share state between them
-    # ask for manual confirmation on the command line. NOTE: This could occupy
-    # all server request-handling threads if multiple requests from non-permitted IP
-    # addresses come in.
+    # ask on the command line whether to accept request from unknown IP
+    # NOTE: This could occupy all server request-handling threads if multiple requests from non-permitted IP addresses
+    # come in. request handlers appear to run in separate processes, so not possible to share state between them.
+    #
     #i = ""
     #while True:
     #    i = raw_input("Allow requests from IP %(ip_address)s [Y/n]? " % locals())
@@ -283,7 +267,8 @@ def parse_region(region):
 
 
 def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
-                        permitted_client_ip_addresses=["127.0.0.1"]):
+                        permitted_client_ip_addresses=["127.0.0.1"],
+                        reference_fasta_path=None):
     """
     The main entry point for igvweb_viewer.
 
@@ -304,6 +289,8 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
             script is running will be able to make requests (eg. the web browser
             must be running on the same computer as this script). Set this
             to None to allow connections from any IP address.
+        reference_fasta_path: (optional) path of reference genome fasta to enable
+            offline use on localhost
     """
 
     # validate args and apply verbose arg
@@ -327,6 +314,17 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
         PERMITTED_CLIENT_IP_ADDRESSES = None
     else:
         PERMITTED_CLIENT_IP_ADDRESSES = set(permitted_client_ip_addresses)
+
+    if reference_fasta_path:
+        assert os.path.isfile(reference_fasta_path), "reference fasta file not found: %s" % reference_fasta_path
+        assert os.path.isfile(reference_fasta_path+".fai"), ".fai index file not found for reference fasta: %s" % (
+            reference_fasta_path+".fai")
+
+        FILES_VISIBLE_THROUGH_WEB_SERVER.add(reference_fasta_path)
+        FILES_VISIBLE_THROUGH_WEB_SERVER.add(reference_fasta_path+".fai")
+
+        REFERENCE_GENOME_SPEC['fastaURL'] = "/file/"+os.path.abspath(reference_fasta_path).replace("/", "|")
+
 
     # process files and loci arg
     log.info("---- page 0 ----")
@@ -353,7 +351,7 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
             log.info("file: " + arg)
             filename = arg
             name = os.path.basename(filename)
-            if name.endswith(".gz"):
+            if name.endswith(".gz") or name.endswith(".bgz"):
                 extension = ".".join(filename.split('.')[-2:])
             else:
                 extension = filename.split('.')[-1]
@@ -369,13 +367,18 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".bai")
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename.replace(".bam", ".bai"))
-            elif extension in ['bed.gz', 'vcf.gz', 'gff.gz']:
+            elif extension in ['bed.gz', 'vcf.gz', 'gff.gz', 'gtf.gz']:
+                indexed = os.path.isfile(filename + ".tbi") or os.path.isfile(filename + ".idx")
                 extension = extension.replace('.gz', '')
-                indexed = os.path.isfile(filename + ".tbi")
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
-                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".tbi")
-            elif extension in ['bed', 'wig', 'vcf']:
+                if indexed:
+                    FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".tbi")
+                    FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".idx")                
+            elif extension in ['bed', 'gff', 'gtf', 'wig', 'vcf']:
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
+                indexed = os.path.isfile(filename + ".idx")
+                if indexed:
+                    FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".idx")
             else:
                 log.warn("WARNING: unexpected file type: %(filename)s. Skipping..." % locals())
                 continue
@@ -412,6 +415,15 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
     app.run(host=host, port=port, processes=4)
 
 
+def can_connect_to_www():
+    try:
+        r = urlopen("http://s3.amazonaws.com/", timeout=1)
+        return True
+    except Exception as e:
+        log.info(e)
+        return False
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(
         description="This script takes a list of files on the command line and, "
@@ -436,6 +448,9 @@ if __name__ == "__main__":
             "WARNING: unless the computer this script runs on is behind a firewall, "
             "anybody on the internet may be able to access the given list of files while "
             "this script is running.")
+    p.add_argument("-r", "--reference-fasta", help="hg19 reference genome .fasta file "
+            "(an .fai index file must also be present). If not provided, it will use a "
+            "publicly-hosted copy from an Amazon S3 server.")
     p.add_argument("-v", "--verbose", action="store_true",
         help="Enable detailed logging output.")
 
@@ -443,8 +458,13 @@ if __name__ == "__main__":
 
     permitted_client_ip_addresses = None if args.any_ip else ["127.0.0.1"]
 
+    if not can_connect_to_www() and not args.reference_fasta:
+        p.error("Unable to connect to Amazon S3 server. Please check that you're online, "
+                "or use -r to provide a reference genome fasta.")
+
     start_igvweb_server(args.files_and_loci,
                         verbose=args.verbose,
                         host=args.host,
                         port=args.port,
-                        permitted_client_ip_addresses=permitted_client_ip_addresses,)
+                        permitted_client_ip_addresses=permitted_client_ip_addresses,
+                        reference_fasta_path=args.reference_fasta)
