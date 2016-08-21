@@ -69,7 +69,7 @@ if args.preference:
 
 # files, loci, regions
 for f in args.files_or_locus:
-    if os.path.isfile(f):
+    if os.path.isfile(f) or f.startswith('http:'):
         igv_robot.load(f)
     elif is_valid_locus_or_region(f):
         igv_robot.goto(locus=f)
