@@ -2,3 +2,9 @@ include LICENSE
 include README.rst
 include tests/*
 include bin/*
+include lib/*
+include static/js/*
+include static/css/*
+include static/css/img/*
+include static/img/*
+include static/fonts/*

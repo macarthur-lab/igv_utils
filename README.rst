@@ -1,8 +1,7 @@
 Overview
 ~~~~~~~~
 
-Python interface to IGV - inspired by a tool written by `@monkollek
-<https://github.com/monkollek>`_.
+Python interface to IGV - inspired by an IGV_plotter tool originally written by `@tmfromer <https://github.com/tmfromer>`_.
 
 It includes the following executables:
 
