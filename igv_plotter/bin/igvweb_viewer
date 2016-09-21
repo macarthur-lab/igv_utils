@@ -2,10 +2,14 @@
 
 import argparse
 import flask
+import json
 import logging
 import os
 import re
 import socket
+import requests
+
+
 try:
     # For Python 3.0 and later
     from urllib.request import urlopen
@@ -330,14 +334,7 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
     log.info("---- page 0 ----")
     previous_arg_was_a_locus = False  # used to decide when to start a new page
     for arg in files_and_loci:
-        locus = parse_locus(arg)
-        if locus:  # handle locus args
-            arg = "%s:%s-%s" % (locus[0], locus[1]-200, locus[1]+200)
-        if parse_region(arg):
-            log.info("region: " + arg)
-            HTML_PAGE_LIST[-1]['loci'].append(arg)
-            previous_arg_was_a_locus = True
-        elif os.path.isfile(arg):   # handle file args
+        if os.path.isfile(arg):   # handle file args
             if previous_arg_was_a_locus and len(HTML_PAGE_LIST[-1]['files']) > 0:
                 # start a new set of files + loci to be displayed on a new page
                 HTML_PAGE_LIST.append({
@@ -390,9 +387,26 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
                  extension,
                  indexed,
                  name))
-
         else:
-            p.error("File doesn't exist: " + arg)
+            locus = parse_locus(arg)
+            if locus:  # handle locus args
+                arg = "%s:%s-%s" % (locus[0], locus[1]-200, locus[1]+200)
+            elif ':' not in arg:
+                chrom, start, end = look_up_symbol(arg)
+                if chrom:
+                    log.info("Resolved genomic coordinates for %s as %s:%s-%s" % (arg, chrom, start, end))
+                    arg = "%s:%s-%s" % (chrom, start, end)
+
+            if parse_region(arg):
+                log.info("region: " + arg)
+                HTML_PAGE_LIST[-1]['loci'].append(arg)
+                previous_arg_was_a_locus = True
+            
+        else:
+            if "/" in arg:
+                p.error("File doesn't exist: " + arg)
+            else:
+                p.error("Unable to understand arg: " + arg)
 
     # check that at least one file was specified
     if len(HTML_PAGE_LIST[-1]['files']) == 0:
@@ -414,6 +428,29 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
 
     app.run(host=host, port=port, processes=4)
 
+
+def look_up_symbol(symbol):
+    """Uses Ensembl API to retrieve genomic coordinates for the given gene or transcript.
+    Args:
+       symbol: gene symbol or gene or transcript id
+
+    Returns: 3-tuple of (chrom, start, end), or None if there was an error.
+    """
+
+    r = requests.get("https://rest.ensembl.org/lookup/symbol/homo_sapiens/%s?expand=0" % symbol, headers={'Content-type':'application/json'})
+    if r.status_code != 200:
+        log.warning("WARNING: unable to lookup %s genomic coordinates using https://rest.ensembl.org API. Received HTTP response code: %s" % (name, r.status_code))
+        return (None, None, None)
+
+    try:
+        json_dict = json.loads(r.content))
+        chrom = json_dict['seq_region_name']
+        start = int(json_dict['start'])
+        end = int(json_dict['end'])
+        return (chrom, start, end)
+    except Exception as e:
+        log.warning("WARNING: unable to lookup %s genomic coordinates using https://rest.ensembl.org API. Couldn't parse resonse: \"%s\"" % (name, r.content))
+        return (None, None, None)
 
 def can_connect_to_www():
     try:

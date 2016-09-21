@@ -1,0 +1,78 @@
+#!/usr/bin/python
+
+from __future__ import print_function
+
+import argparse
+import os
+import sys
+
+
+IGV_SUPPORTED_EXTENSIONS = set([".sam", ".bam", ".bed", ".bedgraph", ".bw", ".bb",
+    ".birdseye_canary_calls", ".broadPeak", ".seg", ".cbs", ".cn", ".expr",
+    ".igv", ".fasta", ".gct", ".gff", ".vcf"])
+
+
+EXTENSIONS_TO_IGNORE = set([".idx", ".tbi", ".bai"])
+
+p = argparse.ArgumentParser()
+p.add_argument("paths", nargs="+", help="File(s) or director(ies) to make available in IGV on your laptop. Only files with recognized extensions (eg. vcf.gz, .bam, etc.) will be added.")
+options = p.parse_args()
+
+igv_server_directory = os.environ.get("IGV_SERVER_DIRECTORY")
+
+if not igv_server_directory:
+    print("ERROR: IGV_SERVER_DIRECTORY environment variable not set") 
+    sys.exit(1)
+
+if not os.path.isdir(igv_server_directory):
+    print("ERROR: IGV_SERVER_DIRECTORY environemnt variable = %(igv_server_directory)s . which is not a valid directory." % locals())
+    sys.exit(1)
+
+def add_link(path):
+    full_path = os.path.abspath(path)
+    filename = os.path.basename(path)
+    symlink_path = os.path.join(igv_server_directory, filename)
+    cmd = "ln -s %(full_path)s %(symlink_path)s" % locals()
+    print("Adding %(filename)s: %(cmd)s" % locals())
+    os.system(cmd)
+
+for path in options.paths:
+    full_path = os.path.abspath(path)
+    if not os.path.exists(path):
+        print("ERROR: %(path)s doesn't exist. Skipping.." % locals())
+        continue
+
+    if os.path.isdir(path):
+        add_link(path)
+    elif os.path.isfile(path):
+        if not any(e for e in IGV_SUPPORTED_EXTENSIONS if e in path) or any(e for e in EXTENSIONS_TO_IGNORE if e in path):
+            print("WARNING: %(path)s isn't a recognized file format. Skipping.." % locals())
+            continue
+
+        add_link(path)
+
+        # add link to index file also
+        if path.endswith(".bam"):
+            if os.path.isfile(path+".bai"):
+                add_link(path+".bai")
+            elif os.path.isfile(path.replace(".bam", ".bai")):
+                add_link(path.replace(".bam", ".bai"))
+            else:
+                print("ERROR: .bai index not found for %(path)s. Skipping.." % locals())
+                continue
+        if path.endswith("vcf.gz"):
+            if os.path.isfile(path+".tbi"):
+                add_link(path+".tbi")
+            else:
+                print("ERROR: .tbi index not found for %(path)s. Skipping.." % locals())
+                continue
+        elif os.path.isfile(path+".idx"):
+            add_link(path+".idx")
+    else:
+        print("WARNING: %(path)s object not recognized. Skipping.." % locals())
+        continue
+
+    
+
+
+

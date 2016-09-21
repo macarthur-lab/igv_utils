@@ -876,7 +876,7 @@ var igv = (function (igv) {
 
                             }
                             else {
-                                
+
                                 binIndex[binNumber] = [];
                                 var nchnk = parser.getInt(); // # of chunks for this bin
 
@@ -914,14 +914,15 @@ var igv = (function (igv) {
                 } else {
                     throw new Error(indexURL + " is not a " + (tabix ? "tabix" : "bai") + " file");
                 }
-                fulfill(new igv.BamIndex(indices, blockMin, sequenceIndexMap, tabix));
+                fulfill(new igv.BamIndex(indices, blockMin, blockMax, sequenceIndexMap, tabix));
             }).catch(reject);
         })
     }
 
 
-    igv.BamIndex = function (indices, blockMin, sequenceIndexMap, tabix) {
+    igv.BamIndex = function (indices, blockMin, blockMax, sequenceIndexMap, tabix) {
         this.firstAlignmentBlock = blockMin;
+        this.lastAlignmentBlock = blockMax;
         this.indices = indices;
         this.sequenceIndexMap = sequenceIndexMap;
         this.tabix = tabix;
@@ -1073,7 +1074,7 @@ var igv = (function (igv) {
     var CIGAR_DECODER = ['M', 'I', 'D', 'N', 'S', 'H', 'P', '=', 'X', '?', '?', '?', '?', '?', '?', '?'];
     var READ_STRAND_FLAG = 0x10;
     var MATE_STRAND_FLAG = 0x20;
-    var FIRST_OF_PAIR_FLAG = 0x40;
+    var FIRST_OF_PAIRX_FLAG = 0x40;
     var SECOND_OF_PAIR_FLAG = 0x80;
     var NOT_PRIMARY_ALIGNMENT_FLAG = 0x100;
     var READ_FAILS_VENDOR_QUALITY_CHECK_FLAG = 0x200;
@@ -4834,45 +4835,54 @@ var igv = (function (igv) {
 
     igv.Browser.prototype.goto = function (chr, start, end) {
 
-        var chromosome,
-            viewportWidthPixel = this.trackViewportWidth(),
-            maxBpPerPixel;
-
         if (typeof this.gotocallback != "undefined") {
             //console.log("Got chr="+chr+", start="+start+", end="+end+", also using callback "+this.gotocallback);
             this.gotocallback(chr, start, end);
         }
 
+        var w,
+            chromosome,
+            viewportWidth = this.trackViewportWidth();
+
         if (igv.popover) {
             igv.popover.hide();
         }
 
+        // Translate chr to official name
         if (this.genome) {
             chr = this.genome.getChromosomeName(chr);
         }
 
         this.referenceFrame.chr = chr;
-        this.referenceFrame.bpPerPixel = (end - start) / (viewportWidthPixel);
+
+        // If end is undefined,  interpret start as the new center, otherwise compute scale.
+        if (!end) {
+            w = Math.round(viewportWidth * this.referenceFrame.bpPerPixel / 2);
+            start = Math.max(0, start - w);
+        }
+        else {
+            this.referenceFrame.bpPerPixel = (end - start) / (viewportWidth);
+        }
 
         if (this.genome) {
-
             chromosome = this.genome.getChromosome(this.referenceFrame.chr);
             if (!chromosome) {
-                console.log("Could not find chromsome " + this.referenceFrame.chr);
-            } else {
+                if (console && console.log) console.log("Could not find chromsome " + this.referenceFrame.chr);
+            }
+            else {
+                if (!chromosome.bpLength) chromosome.bpLength = 1;
 
-                if (!chromosome.bpLength) {
-                    chromosome.bpLength = 1;
+                var maxBpPerPixel = chromosome.bpLength / viewportWidth;
+                if (this.referenceFrame.bpPerPixel > maxBpPerPixel) this.referenceFrame.bpPerPixel = maxBpPerPixel;
+
+                if (!end) {
+                    end = start + viewportWidth * this.referenceFrame.bpPerPixel;
                 }
 
-                maxBpPerPixel = chromosome.bpLength / viewportWidthPixel;
-                if (this.referenceFrame.bpPerPixel > maxBpPerPixel) {
-                    this.referenceFrame.bpPerPixel = maxBpPerPixel;
+                if (chromosome && end > chromosome.bpLength) {
+                    start -= (end - chromosome.bpLength);
                 }
             }
-
-        } else {
-            console.log('browser. no genome.');
         }
 
         this.referenceFrame.start = start;
@@ -7428,9 +7438,9 @@ var igv = (function (igv) {
 
                         var startPos = block.minv.block,
                             startOffset = block.minv.offset,
-                            endPos = block.maxv.block + (index.tabix ? MAX_GZIP_BLOCK_SIZE + 100 : 0),
+                            endPos = Math.min(index.lastAlignmentBlock,(block.maxv.block + (index.tabix ? MAX_GZIP_BLOCK_SIZE + 100 : 0))),
                             options = {
-                                headers: self.config.headers,           // http headers, not file header
+                                headers: self.config.headers, // http headers, not file header
                                 range: {start: startPos, size: endPos - startPos + 1},
                                 withCredentials: self.config.withCredentials
                             },
@@ -7602,7 +7612,6 @@ var igv = (function (igv) {
     return igv;
 })
 (igv || {});
-
 /*
  * The MIT License (MIT)
  *
@@ -8477,7 +8486,8 @@ var igv = (function (igv) {
                 if (self.sourceType === 'file' && (self.visibilityWindow === undefined || self.visibilityWindow <= 0)) {
                     // Expand genomic interval to grab entire chromosome
                     genomicInterval.start = 0;
-                    genomicInterval.end = Number.MAX_VALUE;
+                    var chromosome = igv.browser.genome.getChromosome(chr);
+                    genomicInterval.end = (chromosome === undefined ?  Number.MAX_VALUE : chromosome.bpLength);
                 }
 
                 self.reader.readFeatures(chr, genomicInterval.start, genomicInterval.end).then(
@@ -14373,8 +14383,12 @@ var igv = (function (igv) {
         }
 
         // ideogram
-        browser.ideoPanel = new igv.IdeoPanel(headerDiv);
-        browser.ideoPanel.resize();
+        if (config.hideIdeogram && true === config.hideIdeogram) {
+            // do nothing
+        } else {
+            browser.ideoPanel = new igv.IdeoPanel(headerDiv);
+            browser.ideoPanel.resize();
+        }
 
         // phone home -- counts launches.  Count is anonymous, needed for our continued funding.  Please don't delete
         phoneHome();
