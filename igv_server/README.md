@@ -20,12 +20,10 @@ There are 3 required and 3 optional install steps:
    It can be anywhere as long as it's accessible to the server scripts (eg. chmod 755).  
 
 _Steps 2 and 3 are optional:_  
-2. run `python setup.py install --user` in the same directory as this README file.  
+2. edit your ~/.my.bashrc and add this line:  `export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>`  
+3. run `python setup.py install --user` in the same directory as this README file.  
    This installs the `add_to_igv_server` script which makes it easier to add new files to your $IGV_SERVER_DIRECTORY.  
-3. edit your ~/.my.bashrc to add:  
-```
-export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>     # tells the `add_to_igv_server` script the directory in which to create the symlinks  
-```
+
 **On your laptop:**  
 4. open IGV and go to View > Preferences...  the "Advanced" tab.  
 5. click the "Edit server properties" checkbox, and make Data Registry URL = the url below (after modifying the

@@ -13,4 +13,4 @@ python:
 install: pip install configargparse xvfbwrapper
 
 # command to run tests: 
-script: python setup.py test
+script: cd igv_plotter; python setup.py test
