@@ -17,7 +17,7 @@ There are 3 required and 3 optional install steps:
 **On the cluster (eg. after you ssh gold):**  
 1. create a directory somewhere on the cluster to store the files and directories you
    want to view in IGV (or actually symlinks to them).
-   It can be anywhere as long as it's accessible to the server scripts (eg. chmod 755).  
+   It can be anywhere as long as its file permissions aren't restricted to only you or only your group (eg. they have to be chmod 755).
 
 _Steps 2 and 3 are optional:_  
 2. edit your ~/.my.bashrc and add this line:  `export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>`  
