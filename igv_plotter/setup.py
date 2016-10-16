@@ -107,7 +107,7 @@ setup(
     test_suite='tests',
     scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv'],
     data_files=[
-        ('bin/', ['lib/igv.jar']), 
+        ('bin/', ['lib/igv.jar']), # + glob.glob('bin/*')), 
         ('static/js', glob.glob('static/js/*.*')), 
         ('static/css', glob.glob('static/css/*.*')), 
         ('static/css/img', glob.glob('static/css/img/*.*')), 
