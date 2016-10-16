@@ -387,7 +387,7 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
                  extension,
                  indexed,
                  name))
-        else:
+        elif ":" in arg:
             locus = parse_locus(arg)
             if locus:  # handle locus args
                 arg = "%s:%s-%s" % (locus[0], locus[1]-200, locus[1]+200)
@@ -406,7 +406,7 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
             if "/" in arg:
                 p.error("File doesn't exist: " + arg)
             else:
-                p.error("Unable to understand arg: " + arg)
+                p.error("Unable to parse arg: " + arg)
 
     # check that at least one file was specified
     if len(HTML_PAGE_LIST[-1]['files']) == 0:
