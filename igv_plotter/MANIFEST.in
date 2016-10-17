@@ -2,7 +2,7 @@ include LICENSE
 include README.rst
 include tests/*
 include bin/*
-include lib/*
+include lib/igv.jar
 include static/js/*
 include static/css/*
 include static/css/img/*
