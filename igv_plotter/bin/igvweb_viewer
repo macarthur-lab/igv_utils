@@ -443,7 +443,7 @@ def look_up_symbol(symbol):
         return (None, None, None)
 
     try:
-        json_dict = json.loads(r.content))
+        json_dict = json.loads(r.content)
         chrom = json_dict['seq_region_name']
         start = int(json_dict['start'])
         end = int(json_dict['end'])
