@@ -63,8 +63,8 @@ An :code:`~/.igv_plotter` config file can be created and used to persitantly set
 Contribute
 ~~~~~~~~~~
 
-.. image:: https://api.travis-ci.org/macarthur-lab/igv_plotter.svg?branch=master
-   :target: https://travis-ci.org/macarthur-lab/igv_plotter
+.. image:: https://travis-ci.org/macarthur-lab/igv_utils.svg?branch=master
+   :target: https://travis-ci.org/macarthur-lab/igv_utils
     
 
 Issue reporting and pull requests are appreciated.
