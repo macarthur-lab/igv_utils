@@ -7,8 +7,8 @@ It includes the following scripts:
 * :code:`igv_plotter`   Automates taking IGV screenshots of one or more data files at one or more loci.
 * :code:`igvweb_viewer`  Allows bam, vcf, and/or bed file tracks to be viewed in a web browser using `igv.js <https://github.com/jrobinso>`_.
 
-To install it, run 
-pip install igv_plotter
+To install it, run   
+`pip install igv_plotter`
 
 **igv_server**
 
