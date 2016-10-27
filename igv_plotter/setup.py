@@ -77,8 +77,8 @@ setup(
     description='python interface to IGV that simplifies creating screenshots of BAMs, VCFs, BEDs, etc for one-off '
                 'spot checking or automated / scripted image collection',
     long_description=long_description,
-    author='MacArthur Lab',
-    author_email='macarthurlab@gmail.com',
+    author='Ben Weisburd',
+    author_email='weisburd@broadinstitute.org',
     url='https://github.com/macarthur-lab/igv_utils',
     py_modules=['igv_api'],
     include_package_data=True,
@@ -109,7 +109,7 @@ setup(
     test_suite='tests',
     scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv'],
     data_files=[
-        ('bin/', ['lib/igv.jar']),
+        ('EGG-INFO/scripts/', ['lib/igv.jar']),
         ('static/js', glob.glob('static/js/*.*')), 
         ('static/css', glob.glob('static/css/*.*')), 
         ('static/css/img', glob.glob('static/css/img/*.*')), 
