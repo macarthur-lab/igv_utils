@@ -14,6 +14,7 @@ pip install igv_plotter
 
 A tool that makes it easy to open remote files on the cluster (bams, vcfs, etc.) in an IGV instance that's running on your laptop.
 After you set it up, all you have to do is:
-- on the cluster, go to the files you want to view and run *add_to_igv_server* *my_file1.bam* *my_file2.vcf.gz* ..
-- on your laptop, open IGV and click *File > Load from Server...*, then select *my_file1.bam* and/or *my_file2.vcf.gz* in the dialog that comes up.
+
+* on the cluster, go to the files you want to view and run *add_to_igv_server* *my_file1.bam* *my_file2.vcf.gz* ..  
+* on your laptop, open IGV and click *File > Load from Server...*, then select *my_file1.bam* and/or *my_file2.vcf.gz* in the dialog that comes up.  
 
