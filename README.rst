@@ -8,7 +8,7 @@ It includes the following scripts:
 * :code:`igvweb_viewer`  Allows bam, vcf, and/or bed file tracks to be viewed in a web browser using `igv.js <https://github.com/jrobinso>`_.
 
 To install it, run   
-`pip install igv_plotter`
+*pip install igv_plotter*
 
 **igv_server**
 
