@@ -14,7 +14,8 @@ pip install igv_plotter
 
 A tool that makes it easy to open remote files on the cluster (bams, vcfs, etc.) in an IGV instance that's running on your laptop.
 
-Setting it up involves running an Apache HTTP server on the cluster with mod-wsgi and the scripts here. 
+To set it up:  
+   Run an Apache HTTP server on the cluster (in our case, it's running on a machine called `maclab-utils`) and have it serve the scripts in `igv_server/httpd_server/ <https://github.com/macarthur-lab/igv_utils/tree/master/igv_server/httpd_server>`_. 
 
 After you set it up:
 
