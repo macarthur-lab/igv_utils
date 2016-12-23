@@ -73,7 +73,7 @@ if command not in ['test', 'coverage']:
 
 setup(
     name='igv_plotter',
-    version="0.9.8.6",
+    version="0.9.8.7",
     description='python interface to IGV that simplifies creating screenshots of BAMs, VCFs, BEDs, etc for one-off '
                 'spot checking or automated / scripted image collection',
     long_description=long_description,
@@ -109,10 +109,15 @@ setup(
     test_suite='tests',
     scripts=['bin/igvweb_viewer', 'bin/igv_plotter', 'bin/igv'],
     data_files=[
-        ('EGG-INFO/scripts/', ['lib/igv.jar']),
+        #('EGG-INFO/scripts/', ['lib/igv.jar']),
         ('static/js', glob.glob('static/js/*.*')), 
         ('static/css', glob.glob('static/css/*.*')), 
         ('static/css/img', glob.glob('static/css/img/*.*')), 
         ('static/fonts', glob.glob('static/fonts/*.*')), 
+        ('bin/', ['lib/igv.jar']), # + glob.glob('bin/*')), 
+        #('bin/js', glob.glob('static/js/*.*')), 
+        #('bin/css', glob.glob('static/css/*.*')), 
+        #('bin/css/img', glob.glob('static/css/img/*.*')), 
+        #('bin/fonts', glob.glob('static/fonts/*.*')), 
     ],    
 )
