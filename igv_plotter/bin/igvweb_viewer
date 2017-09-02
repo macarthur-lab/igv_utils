@@ -43,7 +43,7 @@ FILES_VISIBLE_THROUGH_WEB_SERVER = set()
 # Which client IPs are permitted to make requests to this server. If set to None,
 # all IPs will be permitted.
 PERMITTED_CLIENT_IP_ADDRESSES = set()
-STATIC_DIR = os.path.abspath(os.path.dirname(__file__) + "/../../static/")
+STATIC_DIR = os.path.abspath(os.path.dirname(__file__) + "/../static/")
 
 REFERENCE_GENOME_SPEC = {'id': 'hg19'}
 
@@ -247,25 +247,28 @@ def is_permitted_IP_address(ip_address):
     #    else:
     #        print("ERROR: please enter Y or n")
 
+def _parse_chrom(s):
+    return s.replace("chr", "")
+
+def _parse_position(s):
+    return int(s.replace(",", ""))
 
 def parse_locus(locus):
-    """Takes a string like "chrX:12345" and returns ("chrX", 12345),
-    or None if parsing failed.
-    """
+    """Takes a string like "chrX:12345" and returns ("chrX", 12345), or None if parsing failed."""
+
     match = re.match("^([a-zA-Z0-9]{1,5}):([0-9,]{1,10})$", locus)
     if match:
-        return match.group(1), int(match.group(2).replace(",", ""))
+        return _parse_chrom(match.group(1)), _parse_position(match.group(2))
     else:
         return None
-
 
 def parse_region(region):
     """Takes a string like "chrX:12345-54321" and returns ("chrX", 12345, 54321)
     or None if parsing failed.
     """
-    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})$", region)
+    match = re.match("^([a-zA-Z0-9]{1,5}):([0-9,]{1,10})-([0-9,]{1,10})$", region)
     if match:
-        return match.group(1), int(match.group(2)), int(match.group(3))
+        return _parse_chrom(match.group(1)), _parse_position(match.group(2)), _parse_position(match.group(3))
     else:
         return None
 
@@ -364,6 +367,16 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".bai")
                 FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename.replace(".bam", ".bai"))
+            elif extension == 'cram':
+                indexed = True
+                if not any(os.path.isfile(idx) for idx in [filename + ".crai", filename.replace(".bam", ".crai")]):
+                    log.warn("WARNING: .crai index not found for %(filename)s. Skipping..." % locals())
+                    continue
+
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename)
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename + ".crai")
+                FILES_VISIBLE_THROUGH_WEB_SERVER.add(filename.replace(".bam", ".crai"))
+
             elif extension in ['bed.gz', 'vcf.gz', 'gff.gz', 'gtf.gz']:
                 indexed = os.path.isfile(filename + ".tbi") or os.path.isfile(filename + ".idx")
                 extension = extension.replace('.gz', '')
@@ -398,10 +411,11 @@ def start_igvweb_server(files_and_loci, verbose=True, host="0.0.0.0", port=8000,
                     arg = "%s:%s-%s" % (chrom, start, end)
 
             if parse_region(arg):
-                log.info("region: " + arg)
+                log.info("Region: " + arg)
                 HTML_PAGE_LIST[-1]['loci'].append(arg)
                 previous_arg_was_a_locus = True
-            
+            else:
+                log.error("Unable to parse: " + arg)
         else:
             if "/" in arg:
                 p.error("File doesn't exist: " + arg)
