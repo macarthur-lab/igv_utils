@@ -32,8 +32,20 @@ SIMPLE SETUP
 ADVANCED SETUP
 --------------
 
-In addition to the above steps, you can setup the *add_to_igv_server* script to simplify adding new files to your igv_server_dir.
+In addition to the above steps, you can install the *add_to_igv_server* script which makes it easier to add new files to your igv_server_dir on the cluster. 
 
+1. edit your `~/.my.bashrc` and add: 
+```export IGV_SERVER_DIRECTORY=/humgen/atgu1/fs03/${USER}/igv_server_dir```
+2. run 
+```
+git clone git@github.com:macarthur-lab/igv_utils.git
+cd igv_utils/igv_server/
+python setup.py install --user
+```
+3. to add new files or directories, run:
+```
+add_to_igv_server my_file.bam
+```
 
 _Troubleshooting:_  
 If you're not seeing the files you expect when you go to File > Load from Server...:  
