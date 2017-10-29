@@ -23,7 +23,7 @@ SIMPLE SETUP
 5. In IGV, go to **View > Preferences... | Advanced** , click the *"Edit server properties"* checkbox, and set the *"Data Registry URL"* to the url below after replacing **<<< USER >>>** with your actual Broad username:   
    
    ```
-   http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<< USER >>>/igv_server_dir&sort=alphabetical
+   http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<< USER >>>/igv_server_dir&sort=alphabetical
    ```
 6. In IGV, go to **File > Load from Server..** and select the files you want to view.
 
@@ -47,7 +47,9 @@ python setup.py install --user
 add_to_igv_server my_file.bam
 ```
 
-_Troubleshooting:_  
+TROUBLESHOOTING
+---------------
+
 If you're not seeing the files you expect when you go to File > Load from Server...:  
 1. Open the URL from step 5 in Chrome, putting `view-source:` in front of the URL.  
 For example:    
