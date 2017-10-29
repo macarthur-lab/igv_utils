@@ -67,7 +67,7 @@ HOW TO REMOVE OLD FILES
 **On the cluster:**  
 1. cd $IGV_SERVER_DIRECTORY  
 2. delete files or directories you no longer want to see.  (if
-   deleting symlinks to directories, be careful to delete the symlink and not the directory itself - eg. do `rm symlink`, but never `rm -rf <symlink>/`)  
+   deleting symlinks to directories, be careful to delete the symlink and not the directory itself - eg. do `rm symlink`, and not `rm -rf <symlink>/`)  
 
 
 
