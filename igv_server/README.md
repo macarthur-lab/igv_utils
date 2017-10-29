@@ -1,4 +1,4 @@
-Instructions for how to view .bam, .vcf and other files that are on the Broad cluster in IGV on your laptop.
+Instructions for how to view .bam, .vcf and other files on the Broad cluster in an IGV instance running on your laptop.
 
 SIMPLE SETUP
 ------------
@@ -20,13 +20,15 @@ SIMPLE SETUP
 
 **On your laptop:**  
 4. download/run IGV from https://software.broadinstitute.org/software/igv/download  
-5. In IGV, go to *View > Preferences... | Advanced*    
-6. click "Edit server properties" checkbox, and set Data Registry URL to the url below - but replacing ** <<<USER>>> ** with your actual Broad username:   
+5. In IGV, go to *View > Preferences... | Advanced* , click the "Edit server properties" checkbox, and set Data Registry URL to the url below - but replacing **<<< USER >>>** with your actual Broad username:   
    
    ```
-   http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<<USER>>>/igv_server_dir&sort=alphabetical
+   http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<< USER >>>/igv_server_dir&sort=alphabetical
    ```
-   
+6. In IGV, go to File > Load from Server.. and select the files you want to view.
+
+*NOTE:* Only steps 3 and 6 need to be repeated after the initial setup. 
+
 ADVANCED SETUP
 --------------
 
