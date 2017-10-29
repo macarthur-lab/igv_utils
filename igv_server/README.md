@@ -54,9 +54,9 @@ If you're not seeing the files you expect when you go to File > Load from Server
 1. Open the URL from step 5 in Chrome, putting `view-source:` in front of the URL.  
 For example:    
 ```
-view-source:http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/path/to/directory/created/in/step1&sort=alphabetical
+view-source:http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/path/to/directory/created/in/step1&sort=alphabetical
 ```  
-You should see a list of URLs, with the 1st one being like: `http://maclab-utils:8000/scripts/dataFiles.py?...`  
+You should see a list of URLs, with the 1st one being like: `http://xbrowse-bams:8000/scripts/dataFiles.py?...`  
 2. open this 1st url, again putting `view-source:` in front of it.  
 You should see XML tags corresponding to the files and directories in your cluster directory.  
 
@@ -76,17 +76,17 @@ HOW IT WORKS
 
 On your laptop, setting the Data Registry URL in IGV Preferences to
 ```
-http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/your_data_dir/directory/with/files/you/want/to/view/in/igv
+http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/your_data_dir/directory/with/files/you/want/to/view/in/igv
 ```   
 tells IGV that, whenever you click on File > Load from Server... it should send a request to 
 ```
-http://maclab-utils:8000/scripts/dataServerRegistry.py 
+http://xbrowse-bams:8000/scripts/dataServerRegistry.py 
 ```
 to get the list of files it should show in that dialog. 
 
-That request goes to an Apache httpd server on maclab-utils and causes a python script to run. The python script takes the directory out of the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
+That request goes to an Apache httpd server on xbrowse-bams and causes a python script to run. The python script takes the directory out of the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
 figures out all the files in that directory, and then sends that list back to IGV.
 
-Then, after you select some files and click ok, IGV sends requests to http://maclab-utils:8000/ , this time requesting the
+Then, after you select some files and click ok, IGV sends requests to http://xbrowse-bams:8000/ , this time requesting the
 subsections of selected files which are visible in the current window. These
-requests are handled by the same Apache server on maclab-utils, where it can retrieve the data directly from the directories on the cluster.
+requests are handled by the same Apache server on xbrowse-bams, where it can retrieve the data directly from the directories on the cluster.
