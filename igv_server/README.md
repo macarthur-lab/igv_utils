@@ -1,41 +1,36 @@
-These are instructions for how to open bams, vcf and other files on the Broad cluster in a Desktop IGV instance running on your laptop.
+Instructions for how to view .bam, .vcf and other files that are on the Broad cluster in IGV on your laptop.
 
-To set it up, you have to:
+SIMPLE SETUP
+------------
 
-1. on the cluster, go to the files you want to view and run
-   `add_to_igv_server my_file1.bam  my_file2.vcf.gz ..` 
-
-2. on your laptop, open IGV and click File > Load from Server..., then
-   select `my_file1.bam` and/or `my_file2.vcf.gz` in the dialog that comes up.
-
-
-INITIAL SETUP 
--------------
-
-There are 3 required and 3 optional setup steps:  
-
-**On the cluster (eg. after you ssh gold):**  
-1. *create a directory* somewhere on the cluster to store the files and directories you
-   want to view in IGV (or better yet, just symlinks to them).
-   It can be anywhere as long as its file permissions aren't restricted to only you or only your group (eg. they have to be chmod 755).
-
-_Steps 2 and 3 are optional:_  
-2. *edit your ~/.my.bashrc* and add this line:  `export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>`  
-3. *run `python setup.py install --user`* in the same directory as this README file.  
-   This installs the `add_to_igv_server` script which makes it easier to add new files to your $IGV_SERVER_DIRECTORY.  
+**On the cluster:**  
+1. ssh gold.broadinstitute.org
+2. create a directory like: ```mkdir -p /humgen/atgu1/fs03/${USER}/igv_server_dir```
+3. create symlinks to the files you want to view in IGV: 
+      ```
+      cd /humgen/atgu1/fs03/${USER}/igv_server_dir
+      ln -s /path/to/my_file.bam
+      ln -s /path/to/my_file.bam.bai
+      ```
+   *NOTE:* both the data and .bai or .tbi index files should be added to igv_server_dir   
+   
+   *WARNING:* If you add or symlink to deeply-nested directories in igv_server_dir/, 
+   File > Load from Server... may be slow to come up because the script will be going through all the subdirectories
+   and checking for new files to show.    
 
 **On your laptop:**  
-4. open IGV and go to *View > Preferences...*, the "Advanced" tab.  
-5. click the "Edit server properties" checkbox, and set the Data Registry URL to the url below (after modifying the
-   directory path at the end of the url to be the same as the directory you created in step 1):  
-```
-http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/path/to/directory/created/in/step1
-```
-   click Ok. 
+4. download/run IGV from https://software.broadinstitute.org/software/igv/download  
+5. In IGV, go to *View > Preferences... | Advanced*    
+6. click "Edit server properties" checkbox, and set Data Registry URL to the url below - but replacing ** <<<USER>>> ** with your actual Broad username:   
+   
+   ```
+   http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<<USER>>>/igv_server_dir&sort=alphabetical
+   ```
+   
+ADVANCED SETUP
+--------------
 
-_Optional:_  
-6. Add *&sort=alphabetical* (including the &) to the end of the URL in
-   step 5. This will make files appear in alphabetical order in the IGV dialog.
+In addition to the steps above, you can setup the *add_to_igv_server* script which simplifies adding new files to igv_server_dir.
 
 
 _Troubleshooting:_  
@@ -48,36 +43,6 @@ view-source:http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&dir
 You should see a list of URLs, with the 1st one being like: `http://maclab-utils:8000/scripts/dataFiles.py?...`  
 2. open this 1st url, again putting `view-source:` in front of it.  
 You should see XML tags corresponding to the files and directories in your cluster directory.  
-
-
-HOW TO ADD AND VIEW FILES
--------------------------
-
-Any time you want to view a new file in IGV  
-
-**On the cluster:**  
-you can either
-
-   a. manually add (a symlink to) the file(s) or directory into your
-      $IGV_SERVER_DIRECTORY . If you add .bam or .vcf files, remember
-      to also add the .bai or .tbi index files.  
-
-   or just:  
-
-   b. run `add_to_igv_server  path/to/my_file1.bam`      
-
-   where the arg(s) can be a single file, multiple files (eg. *.vcf.gz) and/or directories (eg. my_bams/).   
-   
-   *NOTE:* If you pass it .bam or .vcf files, add_to_igv_server will automatically also add their .bai or .tbi index files (assuming they exist).   
-   If passing director(ies), make sure they don't contain too many deeply nested subdirectories - otherwise 
-   File > Load from Server... may be slow to come up because the script will be going through all the subdirectories
-   and checking for new files to show.   
-
-**On your laptop:**  
-2. in IGV, go to File > Load from Server... and select some_bam_file.bam 
-   (it will be under a category named like $IGV_SERVER_DIRECTORY)  
-
-   click Ok.   
 
 
 HOW TO REMOVE OLD FILES
