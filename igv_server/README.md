@@ -1,6 +1,6 @@
-This tool makes it easy to open remote files on the cluster (bams, vcfs, etc.) in an IGV instance that's running on your laptop.
+These are instructions for how to open bams, vcf and other files on the Broad cluster in a Desktop IGV instance running on your laptop.
 
-After you set it up, all you have to do is:
+To set it up, you have to:
 
 1. on the cluster, go to the files you want to view and run
    `add_to_igv_server my_file1.bam  my_file2.vcf.gz ..` 
@@ -9,32 +9,32 @@ After you set it up, all you have to do is:
    select `my_file1.bam` and/or `my_file2.vcf.gz` in the dialog that comes up.
 
 
-HOW TO INSTALL 
---------------
+INITIAL SETUP 
+-------------
 
-There are 3 required and 3 optional install steps:  
+There are 3 required and 3 optional setup steps:  
 
 **On the cluster (eg. after you ssh gold):**  
-1. create a directory somewhere on the cluster to store the files and directories you
-   want to view in IGV (or actually symlinks to them).
+1. *create a directory* somewhere on the cluster to store the files and directories you
+   want to view in IGV (or better yet, just symlinks to them).
    It can be anywhere as long as its file permissions aren't restricted to only you or only your group (eg. they have to be chmod 755).
 
 _Steps 2 and 3 are optional:_  
-2. edit your ~/.my.bashrc and add this line:  `export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>`  
-3. run `python setup.py install --user` in the same directory as this README file.  
+2. *edit your ~/.my.bashrc* and add this line:  `export IGV_SERVER_DIRECTORY=<full path of directory created in step 1>`  
+3. *run `python setup.py install --user`* in the same directory as this README file.  
    This installs the `add_to_igv_server` script which makes it easier to add new files to your $IGV_SERVER_DIRECTORY.  
 
 **On your laptop:**  
-4. open IGV and go to View > Preferences...  the "Advanced" tab.  
-5. click the "Edit server properties" checkbox, and make Data Registry URL = the url below (after modifying the
-   directory path on the end to be the same as that created in step 1):  
+4. open IGV and go to *View > Preferences...*, the "Advanced" tab.  
+5. click the "Edit server properties" checkbox, and set the Data Registry URL to the url below (after modifying the
+   directory path at the end of the url to be the same as the directory you created in step 1):  
 ```
 http://maclab-utils:8000/scripts/dataServerRegistry.py?genome=$$&directory=/path/to/directory/created/in/step1
 ```
    click Ok. 
 
 _Optional:_  
-6. Add &sort=alphabetical (including the &) to the end of the URL in
+6. Add *&sort=alphabetical* (including the &) to the end of the URL in
    step 5. This will make files appear in alphabetical order in the IGV dialog.
 
 
@@ -62,7 +62,7 @@ you can either
       $IGV_SERVER_DIRECTORY . If you add .bam or .vcf files, remember
       to also add the .bai or .tbi index files.  
 
-   or even simpler:  
+   or just:  
 
    b. run `add_to_igv_server  path/to/my_file1.bam`      
 
