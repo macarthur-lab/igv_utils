@@ -14,9 +14,9 @@ SIMPLE SETUP
       ```
    *NOTE:* both the data and .bai or .tbi index files should be added to igv_server_dir   
    
-   *WARNING:* If you add or symlink to deeply-nested directories in igv_server_dir/, 
-   File > Load from Server... may be slow to come up because the script will be going through all the subdirectories
-   and checking for new files to show.    
+   *WARNING:* symlinking to directories rather than individual files also works, but if you add or symlink a deeply-nested directory, 
+   **File > Load from Server...** may be slow to come up in IGV because the script will need to go through the deeply-nested subdirectories to check for new files to show.    
+
 
 **On your laptop:**  
 4. download/run IGV from https://software.broadinstitute.org/software/igv/download  
@@ -32,7 +32,7 @@ SIMPLE SETUP
 ADVANCED SETUP
 --------------
 
-In addition to the steps above, you can setup the *add_to_igv_server* script which simplifies adding new files to igv_server_dir.
+In addition to the above steps, you can setup the *add_to_igv_server* script to simplify adding new files to your igv_server_dir.
 
 
 _Troubleshooting:_  
