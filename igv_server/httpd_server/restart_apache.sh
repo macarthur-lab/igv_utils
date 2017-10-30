@@ -1,1 +1,1 @@
-sudo apachectl -f /local/httpd/httpd.conf -k restart
+httpd -f /local/httpd/httpd.conf -k restart
