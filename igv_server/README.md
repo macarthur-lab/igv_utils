@@ -74,18 +74,18 @@ REMOVING OLD FILES
 HOW IT WORKS
 ------------
 
-On your laptop, setting the Data Registry URL in IGV Preferences to
+On your laptop, setting the *Data Registry URL* in IGV Preferences to
 ```
 http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/${USER}/igv_server_dir
 ```   
-tells IGV that, whenever you click on File > Load from Server... it should send an HTTP request to 
+tells IGV that, whenever you click on *File > Load from Server...* it should send an HTTP request to 
 ```
 http://xbrowse-bams:8000/scripts/dataServerRegistry.py 
 ```
 to get the list of files it should show in that dialog. 
 
-That request goes to an Apache httpd server that's running on the `xbrowse-bams` VM and causes it to run the `dataServerRegistry.py` python script. This script takes the directory in the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
-walks through all the files in that directory, and sends that list back to IGV.
+That request goes to an Apache httpd server that's running on the `xbrowse-bams` VM. Each such request causes httpd to run the `dataServerRegistry.py` python script. This script takes the directory in the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
+walks through all the files in that directory, and sends that list back to IGV. IGV then uses this list to populate the `Load form Server` dialog.
 
-Then, after you select some files and click ok, IGV sends new requests to http://xbrowse-bams:8000/ , this time requesting the
-regions of these files that are visible in the current window. The httpd server on xbrowse-bams handles these as static file requests which it handles by serving the files from your igv_server_dir directory.
+You select some these files and click ok. IGV then sends new requests to http://xbrowse-bams:8000/ , this time requesting the
+regions of these files that are visible in the current window. The httpd server handles these as static file requests which it serves by accessing the files in your igv_server_dir directory. Scrolling around or jumping to different loci causes new requests to this server.
