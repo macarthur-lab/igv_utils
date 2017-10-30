@@ -85,7 +85,7 @@ http://xbrowse-bams:8000/scripts/dataServerRegistry.py
 to get the list of files it should show in that dialog. 
 
 That request goes to an Apache httpd server that's running on the `xbrowse-bams` VM. Each such request causes httpd to run the `dataServerRegistry.py` python script. This script takes the directory in the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
-walks through all the files in that directory, and sends that list back to IGV. IGV then uses this list to populate the `Load form Server` dialog.
+walks through all the files in that directory, and sends that list back to IGV. IGV then uses this list to populate the *Load from Server...* dialog.
 
 You select some these files and click ok. IGV then sends new requests to http://xbrowse-bams:8000/ , this time requesting the
 regions of these files that are visible in the current window. The httpd server handles these as static file requests which it serves by accessing the files in your igv_server_dir directory. Scrolling around or jumping to different loci causes new requests to this server.
