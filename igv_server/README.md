@@ -20,12 +20,12 @@ SIMPLE SETUP
 
 **On your laptop:**  
 4. download/run IGV from https://software.broadinstitute.org/software/igv/download  
-5. In IGV, go to **View > Preferences... | Advanced** , click the *"Edit server properties"* checkbox, and set the *"Data Registry URL"* to the url below after replacing **<<< USER >>>** with your actual Broad username:   
+5. in IGV, go to **View > Preferences... | Advanced** , click the *"Edit server properties"* checkbox, and set the *"Data Registry URL"* to the url below after replacing **<<< USER >>>** with your actual Broad username:   
    
    ```
    http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/<<< USER >>>/igv_server_dir&sort=alphabetical
    ```
-6. In IGV, go to **File > Load from Server..** and select the files you want to view.
+6. in IGV, go to **File > Load from Server..** and select the files you want to view.
 
 *NOTE:* Only steps 3 and 6 need to be repeated after the initial setup. 
 
@@ -56,12 +56,12 @@ For example:
 ```
 view-source:http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/path/to/directory/created/in/step1&sort=alphabetical
 ```  
-You should see a list of URLs, with the 1st one being like: `http://xbrowse-bams:8000/scripts/dataFiles.py?...`  
-2. open this 1st url, again putting `view-source:` in front of it.  
-You should see XML tags corresponding to the files and directories in your cluster directory.  
+You should see a list of URLs, with the 1st one being similar to: `http://xbrowse-bams:8000/scripts/dataFiles.py?...`  
+2. open this url, also with `view-source:` in front of it.  
+You should see XML tags corresponding to the files and directories in your *igv_server_dir* directory.  
 
 
-HOW TO REMOVE OLD FILES
+REMOVING OLD FILES
 -----------------------
 
 **On the cluster:**  
@@ -76,17 +76,16 @@ HOW IT WORKS
 
 On your laptop, setting the Data Registry URL in IGV Preferences to
 ```
-http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/your_data_dir/directory/with/files/you/want/to/view/in/igv
+http://xbrowse-bams:8000/scripts/dataServerRegistry.py?genome=$$&directory=/humgen/atgu1/fs03/${USER}/igv_server_dir
 ```   
-tells IGV that, whenever you click on File > Load from Server... it should send a request to 
+tells IGV that, whenever you click on File > Load from Server... it should send an HTTP request to 
 ```
 http://xbrowse-bams:8000/scripts/dataServerRegistry.py 
 ```
 to get the list of files it should show in that dialog. 
 
-That request goes to an Apache httpd server on xbrowse-bams and causes a python script to run. The python script takes the directory out of the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
-figures out all the files in that directory, and then sends that list back to IGV.
+That request goes to an Apache httpd server that's running on the `xbrowse-bams` VM and causes it to run the `dataServerRegistry.py` python script. This script takes the directory in the last part of the url (eg. &directory=/humgen/atgu1/fs03/your_data_dir/igv_files/), 
+walks through all the files in that directory, and sends that list back to IGV.
 
-Then, after you select some files and click ok, IGV sends requests to http://xbrowse-bams:8000/ , this time requesting the
-subsections of selected files which are visible in the current window. These
-requests are handled by the same Apache server on xbrowse-bams, where it can retrieve the data directly from the directories on the cluster.
+Then, after you select some files and click ok, IGV sends new requests to http://xbrowse-bams:8000/ , this time requesting the
+regions of these files that are visible in the current window. The httpd server on xbrowse-bams handles these as static file requests which it handles by serving the files from your igv_server_dir directory.
