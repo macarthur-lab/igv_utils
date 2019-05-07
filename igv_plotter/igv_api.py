@@ -270,12 +270,12 @@ class _IGVRobot(object):
     def _match_locus_string(self, locus_str):
         """If this is a valid locus_str (eg. 'chrX:1000'), return a reg-exp Match object where match.group(1) is the
         chromosome and match.group(2) is the position. Otherwise, return None"""
-        return re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})", locus_str)
+        return re.match("([^:]+):([0-9]+)", locus_str)
 
     def _match_region_string(self, region_str):
         """If region_str is valid (eg. 'chrX:10-100'), return a reg-exp Match object where match.group(1) is the
         chromosome and match.group(2) and match.group(3) are the start and stop positions. Otherwise, return None."""
-        return re.match("([a-zA-Z0-9]{1,5}):([0-9]{1,10})-([0-9]{1,10})", region_str)
+        return re.match("([^:]+):([0-9]+)-([0-9]+)", region_str)
 
     def _get_command_queue(self):
         """Used for testing"""
